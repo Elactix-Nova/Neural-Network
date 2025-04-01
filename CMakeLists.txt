@@ -32,7 +32,7 @@ add_library(neural_network ${SOURCES} ${HEADERS})
 # Add include directories
 target_include_directories(neural_network PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${EIGEN3_INCLUDE_DIR}
+        `${EIGEN3_INCLUDE_DIR}
 )
 
 # Add example program
