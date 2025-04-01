@@ -1,4 +1,5 @@
 #include "losses.hpp"
+#include "convolutional.hpp"
 #include <iostream>
 #include <iomanip>
 
@@ -82,9 +83,39 @@ void testBinaryCrossEntropy() {
     printMatrix(bce_grad2, "Binary Cross-Entropy Gradient");
 }
 
+void testConvolutional() {
+    std::cout << "\n=== Testing Convolutional Layer ===\n";
+    
+    // Test case: 3x3 input with 2 channels, 2x2 kernel, 2 output channels
+    std::vector<int> input_shape = {2, 3, 3};  // 2 channels, 3x3 input
+    Convolutional conv(input_shape, 2, 2);     // 2x2 kernel, 2 output channels
+    
+    // Create input with 2 channels (6x3 matrix)
+    Eigen::MatrixXd input(6, 3);
+    // First channel (top 3x3)
+    input.block(0, 0, 3, 3).setConstant(2.0);
+    // Second channel (bottom 3x3)
+    input.block(3, 0, 3, 3).setConstant(2.0);
+    
+    printMatrix(input, "Input (2 channels)");
+    
+    // Forward pass
+    Eigen::MatrixXd output = conv.forward(input);
+    printMatrix(output, "Forward Output (2 channels)");
+    
+    // Backward pass
+    // Create gradient with 2 channels (4x2 matrix)
+    Eigen::MatrixXd grad(4, 2);
+    grad.setConstant(2.0);  // Set all values to 2
+    
+    Eigen::MatrixXd back_grad = conv.backward(grad, 0.01);
+    printMatrix(back_grad, "Backward Gradient (2 channels)");
+}
+
 int main() {
     std::cout << std::fixed << std::setprecision(4);
     testMSE();
     testBinaryCrossEntropy();
+    testConvolutional();
     return 0;
 }

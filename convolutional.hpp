@@ -8,6 +8,8 @@ public:
     Convolutional(const std::vector<int>& input_shape, int kernel_size, int depth);
     Eigen::MatrixXd forward(const Eigen::MatrixXd& input) override;
     Eigen::MatrixXd backward(const Eigen::MatrixXd& output_gradient, double learning_rate) override;
+    void print_kernels();
+    void print_biases();
  
 private:
     int depth;

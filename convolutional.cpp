@@ -1,5 +1,7 @@
 #include "convolutional.hpp"
 #include <cmath>
+#include <iostream>
+
 
 Convolutional::Convolutional(const std::vector<int>& input_shape, int kernel_size, int depth)
     : input_shape(input_shape),
@@ -173,3 +175,15 @@ Eigen::MatrixXd Convolutional::backward(const Eigen::MatrixXd& output_gradient, 
     
     return input_gradient;
 } 
+
+void Convolutional::print_kernels() {
+    for (int i = 0; i < depth; i++) {
+        std::cout << "Kernel " << i << ":\n" << kernels[i] << "\n";
+    }
+}
+
+void Convolutional::print_biases() {
+    for (int i = 0; i < depth; i++) {
+        std::cout << "Bias " << i << ":\n" << biases[i] << "\n";
+    }
+}
