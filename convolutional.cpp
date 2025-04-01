@@ -62,7 +62,7 @@ Eigen::MatrixXd Convolutional::correlate2d(const Eigen::MatrixXd& input, const E
             double sum = 0.0;
             for (int k = 0; k < kernel_size; k++) {
                 for (int l = 0; l < kernel_size; l++) {
-                    sum += input(i + k, j + l) * kernel(k * kernel_size + l);
+                    sum += input(i + k, j + l) * kernel(k, l);
                 }
             }
             result(i, j) = sum;
@@ -87,7 +87,7 @@ Eigen::MatrixXd Convolutional::convolve2d(const Eigen::MatrixXd& input, const Ei
                     int input_i = i - k;
                     int input_j = j - l;
                     if (input_i >= 0 && input_i < input_rows && input_j >= 0 && input_j < input_cols) {
-                        sum += input(input_i, input_j) * kernel(k * kernel_size + l);
+                        sum += input(input_i, input_j) * kernel(k, l);
                     }
                 }
             }
@@ -100,6 +100,9 @@ Eigen::MatrixXd Convolutional::convolve2d(const Eigen::MatrixXd& input, const Ei
 
 Eigen::MatrixXd Convolutional::forward(const Eigen::MatrixXd& input) {
     this->input = input;
+    
+    // Calculate kernel size from kernels_shape
+    int kernel_size = kernels_shape[2];  // kernels_shape[2] is the kernel height/width
     
     // Reshape input to 3D (depth, height, width)
     std::vector<Eigen::MatrixXd> input_3d(input_depth);
@@ -116,7 +119,9 @@ Eigen::MatrixXd Convolutional::forward(const Eigen::MatrixXd& input) {
     // Perform convolution
     for (int i = 0; i < depth; i++) {
         for (int j = 0; j < input_depth; j++) {
-            output_3d[i] += correlate2d(input_3d[j], kernels[i].row(j));
+            // Reshape kernel row into 2D matrix
+            Eigen::MatrixXd kernel_2d = kernels[i].row(j).reshaped(kernel_size, kernel_size);
+            output_3d[i] += correlate2d(input_3d[j], kernel_2d);
         }
     }
     
@@ -130,6 +135,9 @@ Eigen::MatrixXd Convolutional::forward(const Eigen::MatrixXd& input) {
 }
 
 Eigen::MatrixXd Convolutional::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
+    // Calculate kernel size from kernels_shape
+    int kernel_size = kernels_shape[2];  // kernels_shape[2] is the kernel height/width
+    
     // Reshape output gradient to 3D
     std::vector<Eigen::MatrixXd> output_gradient_3d(depth);
     for (int i = 0; i < depth; i++) {
@@ -145,7 +153,7 @@ Eigen::MatrixXd Convolutional::backward(const Eigen::MatrixXd& output_gradient, 
     // Initialize gradients
     std::vector<Eigen::MatrixXd> kernels_gradient(depth);
     for (int i = 0; i < depth; i++) {
-        kernels_gradient[i] = Eigen::MatrixXd::Zero(input_depth, kernels[0].cols());
+        kernels_gradient[i] = Eigen::MatrixXd::Zero(input_depth, kernel_size * kernel_size);
     }
     
     std::vector<Eigen::MatrixXd> input_gradient_3d(input_depth);
@@ -156,8 +164,13 @@ Eigen::MatrixXd Convolutional::backward(const Eigen::MatrixXd& output_gradient, 
     // Compute gradients
     for (int i = 0; i < depth; i++) {
         for (int j = 0; j < input_depth; j++) {
-            kernels_gradient[i].row(j) = correlate2d(input_3d[j], output_gradient_3d[i]).transpose();
-            input_gradient_3d[j] += convolve2d(output_gradient_3d[i], kernels[i].row(j));
+            // Compute kernel gradient
+            Eigen::MatrixXd corr_result = correlate2d(input_3d[j], output_gradient_3d[i]);
+            kernels_gradient[i].row(j) = corr_result.reshaped(1, kernel_size * kernel_size);
+            
+            // Compute input gradient
+            Eigen::MatrixXd kernel_2d = kernels[i].row(j).reshaped(kernel_size, kernel_size);
+            input_gradient_3d[j] += convolve2d(output_gradient_3d[i], kernel_2d);
         }
     }
     
@@ -174,7 +187,7 @@ Eigen::MatrixXd Convolutional::backward(const Eigen::MatrixXd& output_gradient, 
     }
     
     return input_gradient;
-} 
+}
 
 void Convolutional::print_kernels() {
     for (int i = 0; i < depth; i++) {

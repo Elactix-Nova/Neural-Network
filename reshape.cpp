@@ -1,7 +1,7 @@
 #include "reshape.hpp"
 #include <numeric>
 
-Reshape::Reshape(const std::vector<int>& new_shape) : new_shape(new_shape) {}
+Reshape::Reshape(const std::vector<Eigen::Index>& new_shape) : new_shape(new_shape) {}
 
 Eigen::MatrixXd Reshape::forward(const Eigen::MatrixXd& input) {
     this->input = input;
@@ -10,29 +10,34 @@ Eigen::MatrixXd Reshape::forward(const Eigen::MatrixXd& input) {
     old_shape = {input.rows(), input.cols()};
     
     // Calculate the total number of elements
-    int total_elements = input.size();
+    Eigen::Index total_elements = input.size();
     
     // Verify that the new shape has the same number of elements
-    int new_total = std::accumulate(new_shape.begin(), new_shape.end(), 1, std::multiplies<int>());
+    Eigen::Index new_total = std::accumulate(new_shape.begin(), new_shape.end(), 
+                                           static_cast<Eigen::Index>(1), std::multiplies<Eigen::Index>());
     if (total_elements != new_total) {
         throw std::runtime_error("Reshape: Total number of elements must remain the same");
     }
     
-    // Reshape the input matrix
+    // Create a reshaped matrix
     Eigen::MatrixXd reshaped;
     if (new_shape.size() == 2) {
-        reshaped = input.reshape(new_shape[0], new_shape[1]);
+        // For 2D reshape, create a new matrix with the specified dimensions
+        reshaped = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+            input.data(), new_shape[0], new_shape[1]);
     } else {
         // For higher dimensions, we'll flatten to 2D
-        int rows = new_shape[0];
-        int cols = total_elements / rows;
-        reshaped = input.reshape(rows, cols);
+        Eigen::Index rows = new_shape[0];
+        Eigen::Index cols = total_elements / rows;
+        reshaped = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+            input.data(), rows, cols);
     }
     
     return reshaped;
 }
 
 Eigen::MatrixXd Reshape::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    // Simply reshape back to the original shape
-    return output_gradient.reshape(old_shape[0], old_shape[1]);
-} 
+    // Reshape back to the original shape
+    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+        output_gradient.data(), old_shape[0], old_shape[1]);
+}
