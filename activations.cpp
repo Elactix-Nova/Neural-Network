@@ -27,7 +27,7 @@ Eigen::MatrixXd ReLU::forward(const Eigen::MatrixXd& input) {
 }
 
 Eigen::MatrixXd ReLU::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    return output_gradient.array() * (input.array() > 0);
+    return output_gradient.array() * (input.array() >= 0).cast<double>();
 }
 
 Eigen::MatrixXd Softmax::forward(const Eigen::MatrixXd& input) {
