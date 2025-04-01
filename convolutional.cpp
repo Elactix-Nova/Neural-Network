@@ -62,7 +62,7 @@ Eigen::MatrixXd Convolutional::correlate2d(const Eigen::MatrixXd& input, const E
             double sum = 0.0;
             for (int k = 0; k < kernel_size; k++) {
                 for (int l = 0; l < kernel_size; l++) {
-                    sum += input(i + k, j + l) * kernel(0, k * kernel_size + l);
+                    sum += input(i + k, j + l) * kernel(k * kernel_size + l);
                 }
             }
             result(i, j) = sum;
@@ -87,7 +87,7 @@ Eigen::MatrixXd Convolutional::convolve2d(const Eigen::MatrixXd& input, const Ei
                     int input_i = i - k;
                     int input_j = j - l;
                     if (input_i >= 0 && input_i < input_rows && input_j >= 0 && input_j < input_cols) {
-                        sum += input(input_i, input_j) * kernel(0, k * kernel_size + l);
+                        sum += input(input_i, input_j) * kernel(k * kernel_size + l);
                     }
                 }
             }
