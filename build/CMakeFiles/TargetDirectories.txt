@@ -1,0 +1,4 @@
+/mnt/d/Neural-Network/build/CMakeFiles/neural_network.dir
+/mnt/d/Neural-Network/build/CMakeFiles/xor_example.dir
+/mnt/d/Neural-Network/build/CMakeFiles/edit_cache.dir
+/mnt/d/Neural-Network/build/CMakeFiles/rebuild_cache.dir

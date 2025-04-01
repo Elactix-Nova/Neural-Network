@@ -1,0 +1,2 @@
+/usr/bin/ar qc libneural_network.a CMakeFiles/neural_network.dir/dense.cpp.o CMakeFiles/neural_network.dir/activations.cpp.o CMakeFiles/neural_network.dir/losses.cpp.o CMakeFiles/neural_network.dir/network.cpp.o
+/usr/bin/ranlib libneural_network.a
