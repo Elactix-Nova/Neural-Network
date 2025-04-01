@@ -1,13 +1,15 @@
 #include "pooling.hpp"
 
 // MaxPooling implementation
-MaxPooling::MaxPooling(int kernel_size) : kernel_size(kernel_size) {}
+MaxPooling::MaxPooling(int kernel_size, int stride) 
+    : kernel_size(kernel_size), 
+      stride(stride == -1 ? kernel_size : stride) {}
 
 Eigen::MatrixXd MaxPooling::forward(const Eigen::MatrixXd& input) {
     this->input = input;
     
-    int output_rows = input.rows() / kernel_size;
-    int output_cols = input.cols() / kernel_size;
+    int output_rows = (input.rows() - kernel_size) / stride + 1;
+    int output_cols = (input.cols() - kernel_size) / stride + 1;
     
     Eigen::MatrixXd output(output_rows, output_cols);
     max_indices = Eigen::MatrixXd::Zero(output_rows, output_cols);
@@ -15,7 +17,7 @@ Eigen::MatrixXd MaxPooling::forward(const Eigen::MatrixXd& input) {
     for (int i = 0; i < output_rows; i++) {
         for (int j = 0; j < output_cols; j++) {
             // Get the current window
-            Eigen::MatrixXd window = input.block(i * kernel_size, j * kernel_size, kernel_size, kernel_size);
+            Eigen::MatrixXd window = input.block(i * stride, j * stride, kernel_size, kernel_size);
             
             // Find max value and its index
             double max_val = window.maxCoeff();
@@ -42,7 +44,7 @@ Eigen::MatrixXd MaxPooling::backward(const Eigen::MatrixXd& output_gradient, dou
             int max_col = max_idx % kernel_size;
             
             // Place the gradient at the position of the max value
-            input_gradient(i * kernel_size + max_row, j * kernel_size + max_col) = output_gradient(i, j);
+            input_gradient(i * stride + max_row, j * stride + max_col) = output_gradient(i, j);
         }
     }
     
@@ -50,20 +52,22 @@ Eigen::MatrixXd MaxPooling::backward(const Eigen::MatrixXd& output_gradient, dou
 }
 
 // AveragePooling implementation
-AveragePooling::AveragePooling(int kernel_size) : kernel_size(kernel_size) {}
+AveragePooling::AveragePooling(int kernel_size, int stride) 
+    : kernel_size(kernel_size), 
+      stride(stride == -1 ? kernel_size : stride) {}
 
 Eigen::MatrixXd AveragePooling::forward(const Eigen::MatrixXd& input) {
     this->input = input;
     
-    int output_rows = input.rows() / kernel_size;
-    int output_cols = input.cols() / kernel_size;
+    int output_rows = (input.rows() - kernel_size) / stride + 1;
+    int output_cols = (input.cols() - kernel_size) / stride + 1;
     
     Eigen::MatrixXd output(output_rows, output_cols);
     
     for (int i = 0; i < output_rows; i++) {
         for (int j = 0; j < output_cols; j++) {
             // Get the current window and compute average
-            Eigen::MatrixXd window = input.block(i * kernel_size, j * kernel_size, kernel_size, kernel_size);
+            Eigen::MatrixXd window = input.block(i * stride, j * stride, kernel_size, kernel_size);
             output(i, j) = window.mean();
         }
     }
@@ -80,7 +84,7 @@ Eigen::MatrixXd AveragePooling::backward(const Eigen::MatrixXd& output_gradient,
             double grad_value = output_gradient(i, j) / (kernel_size * kernel_size);
             
             // Fill the corresponding window in the input gradient
-            input_gradient.block(i * kernel_size, j * kernel_size, kernel_size, kernel_size)
+            input_gradient.block(i * stride, j * stride, kernel_size, kernel_size)
                 .setConstant(grad_value);
         }
     }
