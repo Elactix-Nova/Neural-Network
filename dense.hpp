@@ -13,4 +13,4 @@ private:
     Eigen::MatrixXd bias;
     std::random_device rd;
     std::mt19937 gen;
-}; 
+};

@@ -9,10 +9,12 @@ Dense::Dense(int input_size, int output_size)
     bias = Eigen::MatrixXd::Zero(output_size, 1);
     
     for(int i = 0; i < output_size; i++) {
+        double temp = dist(gen);
         for(int j = 0; j < input_size; j++) {
             weights(i, j) = dist(gen);
+            bias(i, j) = temp;
         }
-        bias(i, 0) = dist(gen);
+        // bias(i, 0) = dist(gen);
     }
 }
 
