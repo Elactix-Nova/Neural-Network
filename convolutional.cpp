@@ -25,8 +25,7 @@ Convolutional::Convolutional(const std::vector<int>& input_shape, int kernel_siz
         for (int j = 0; j < input_depth; ++j) {
             for (int k = 0; k < kernel_size; ++k) {
                 for (int l = 0; l < kernel_size; ++l) {
-                    // kernels[i][j](k, l) = dist(gen);
-                    kernels[i][j](k, l) = 2.0;
+                    kernels[i][j](k, l) = dist(gen);
                 }
             }
         }
