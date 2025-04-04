@@ -1,97 +1,99 @@
 #include "pooling.hpp"
 
 // MaxPooling implementation
-MaxPooling::MaxPooling(int kernel_size, int stride) 
-    : kernel_size(kernel_size), 
+MaxPooling::MaxPooling(int kernel_size, int stride)
+    : kernel_size(kernel_size),
       stride(stride == -1 ? kernel_size : stride) {}
 
 std::vector<Eigen::MatrixXd> MaxPooling::forward(const std::vector<Eigen::MatrixXd>& input) {
     this->input = input;
-    
-    int output_rows = (input[0].rows() - kernel_size) / stride + 1;
-    int output_cols = (input[0].cols() - kernel_size) / stride + 1;
-    
-    std::vector<Eigen::MatrixXd> output(1);
-    output[0] = Eigen::MatrixXd(output_rows, output_cols);
-    max_indices = Eigen::MatrixXd::Zero(output_rows, output_cols);
-    
-    for (int i = 0; i < output_rows; i++) {
-        for (int j = 0; j < output_cols; j++) {
-            // Get the current window
-            Eigen::MatrixXd window = input[0].block(i * stride, j * stride, kernel_size, kernel_size);
-            
-            // Find max value and its index
-            double max_val = window.maxCoeff();
-            Eigen::Index max_row, max_col;
-            window.maxCoeff(&max_row, &max_col);
-            
-            // Store the max value and its relative index
-            output[0](i, j) = max_val;
-            max_indices(i, j) = max_row * kernel_size + max_col;
+    int channels = input.size();
+    std::vector<Eigen::MatrixXd> output(channels);
+    max_row_indices.resize(channels);
+    max_col_indices.resize(channels);
+
+    for (int ch = 0; ch < channels; ++ch) {
+        int out_rows = (input[ch].rows() - kernel_size) / stride + 1;
+        int out_cols = (input[ch].cols() - kernel_size) / stride + 1;
+
+        output[ch] = Eigen::MatrixXd(out_rows, out_cols);
+        max_row_indices[ch] = Eigen::MatrixXi(out_rows, out_cols);
+        max_col_indices[ch] = Eigen::MatrixXi(out_rows, out_cols);
+
+        for (int i = 0; i < out_rows; ++i) {
+            for (int j = 0; j < out_cols; ++j) {
+                Eigen::MatrixXd window = input[ch].block(i * stride, j * stride, kernel_size, kernel_size);
+                Eigen::Index maxRow, maxCol;
+                double maxVal = window.maxCoeff(&maxRow, &maxCol);
+
+                output[ch](i, j) = maxVal;
+                max_row_indices[ch](i, j) = maxRow;
+                max_col_indices[ch](i, j) = maxCol;
+            }
         }
     }
-    
+
     return output;
 }
 
 std::vector<Eigen::MatrixXd> MaxPooling::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
-    std::vector<Eigen::MatrixXd> input_gradient(1);
-    input_gradient[0] = Eigen::MatrixXd::Zero(input[0].rows(), input[0].cols());
-    
-    for (int i = 0; i < output_gradient[0].rows(); i++) {
-        for (int j = 0; j < output_gradient[0].cols(); j++) {
-            // Get the index of the max value
-            int max_idx = static_cast<int>(max_indices(i, j));
-            int max_row = max_idx / kernel_size;
-            int max_col = max_idx % kernel_size;
-            
-            // Place the gradient at the position of the max value
-            input_gradient[0](i * stride + max_row, j * stride + max_col) = output_gradient[0](i, j);
+    std::vector<Eigen::MatrixXd> input_gradient(input.size());
+
+    for (size_t ch = 0; ch < input.size(); ++ch) {
+        input_gradient[ch] = Eigen::MatrixXd::Zero(input[ch].rows(), input[ch].cols());
+
+        for (int i = 0; i < output_gradient[ch].rows(); ++i) {
+            for (int j = 0; j < output_gradient[ch].cols(); ++j) {
+                int max_i = i * stride + max_row_indices[ch](i, j);
+                int max_j = j * stride + max_col_indices[ch](i, j);
+                input_gradient[ch](max_i, max_j) += output_gradient[ch](i, j);
+            }
         }
     }
-    
+
     return input_gradient;
 }
 
 // AveragePooling implementation
-AveragePooling::AveragePooling(int kernel_size, int stride) 
-    : kernel_size(kernel_size), 
+AveragePooling::AveragePooling(int kernel_size, int stride)
+    : kernel_size(kernel_size),
       stride(stride == -1 ? kernel_size : stride) {}
 
 std::vector<Eigen::MatrixXd> AveragePooling::forward(const std::vector<Eigen::MatrixXd>& input) {
     this->input = input;
-    
-    int output_rows = (input[0].rows() - kernel_size) / stride + 1;
-    int output_cols = (input[0].cols() - kernel_size) / stride + 1;
-    
-    std::vector<Eigen::MatrixXd> output(1);
-    output[0] = Eigen::MatrixXd(output_rows, output_cols);
-    
-    for (int i = 0; i < output_rows; i++) {
-        for (int j = 0; j < output_cols; j++) {
-            // Get the current window and compute average
-            Eigen::MatrixXd window = input[0].block(i * stride, j * stride, kernel_size, kernel_size);
-            output[0](i, j) = window.mean();
+    int channels = input.size();
+    std::vector<Eigen::MatrixXd> output(channels);
+
+    for (int ch = 0; ch < channels; ++ch) {
+        int out_rows = (input[ch].rows() - kernel_size) / stride + 1;
+        int out_cols = (input[ch].cols() - kernel_size) / stride + 1;
+
+        output[ch] = Eigen::MatrixXd(out_rows, out_cols);
+
+        for (int i = 0; i < out_rows; ++i) {
+            for (int j = 0; j < out_cols; ++j) {
+                Eigen::MatrixXd window = input[ch].block(i * stride, j * stride, kernel_size, kernel_size);
+                output[ch](i, j) = window.mean();
+            }
         }
     }
-    
+
     return output;
 }
 
 std::vector<Eigen::MatrixXd> AveragePooling::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
-    std::vector<Eigen::MatrixXd> input_gradient(1);
-    input_gradient[0] = Eigen::MatrixXd::Zero(input[0].rows(), input[0].cols());
-    
-    for (int i = 0; i < output_gradient[0].rows(); i++) {
-        for (int j = 0; j < output_gradient[0].cols(); j++) {
-            // Distribute the gradient evenly across the window
-            double grad_value = output_gradient[0](i, j) / (kernel_size * kernel_size);
-            
-            // Fill the corresponding window in the input gradient
-            input_gradient[0].block(i * stride, j * stride, kernel_size, kernel_size)
-                .setConstant(grad_value);
+    std::vector<Eigen::MatrixXd> input_gradient(input.size());
+
+    for (size_t ch = 0; ch < input.size(); ++ch) {
+        input_gradient[ch] = Eigen::MatrixXd::Zero(input[ch].rows(), input[ch].cols());
+
+        for (int i = 0; i < output_gradient[ch].rows(); ++i) {
+            for (int j = 0; j < output_gradient[ch].cols(); ++j) {
+                input_gradient[ch].block(i * stride, j * stride, kernel_size, kernel_size)
+                    .array() += output_gradient[ch](i, j) / (kernel_size * kernel_size);
+            }
         }
     }
-    
+
     return input_gradient;
-} 
+}

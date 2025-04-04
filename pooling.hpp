@@ -1,5 +1,9 @@
-#pragma once
+#ifndef POOLING_HPP
+#define POOLING_HPP
+
 #include "layer.hpp"
+#include <Eigen/Dense>
+#include <vector>
 
 class MaxPooling : public Layer {
 public:
@@ -8,9 +12,9 @@ public:
     std::vector<Eigen::MatrixXd> backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) override;
 
 private:
-    int kernel_size;
-    int stride;
-    Eigen::MatrixXd max_indices;  // Store indices of max values for backward pass
+    int kernel_size, stride;
+    std::vector<Eigen::MatrixXi> max_row_indices;
+    std::vector<Eigen::MatrixXi> max_col_indices;
 };
 
 class AveragePooling : public Layer {
@@ -20,6 +24,7 @@ public:
     std::vector<Eigen::MatrixXd> backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) override;
 
 private:
-    int kernel_size;
-    int stride;
-}; 
+    int kernel_size, stride;
+};
+
+#endif // POOLING_HPP
