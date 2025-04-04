@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/xor_example.dir/xor_example.cpp.o -o xor_example  libneural_network.a 

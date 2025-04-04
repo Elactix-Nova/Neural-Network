@@ -1,257 +1,203 @@
+#include "convolutional.hpp"
 #include <iostream>
 #include <vector>
 #include <random>
-#include <limits>
-#include "convolutional.hpp"
 #include <Eigen/Dense>
 
 using namespace std;
 using namespace Eigen;
 
-Convolutional::Convolutional(vector<int> input_shape, int kernel_size, int depth)
+Convolutional::Convolutional(const std::vector<int>& input_shape, int kernel_size, int depth)
     : depth(depth), kernel_size(kernel_size) {
     input_depth = input_shape[0];
     input_height = input_shape[1];
     input_width = input_shape[2];
     output_height = input_height - kernel_size + 1;
     output_width = input_width - kernel_size + 1;
-    
+
     // Resize containers
-    kernels.resize(depth, vector<MatrixXd>(input_depth));
-    biases.resize(depth);
-    
+    kernels.resize(depth, vector<MatrixXd>(input_depth, MatrixXd(kernel_size, kernel_size)));
+    biases.resize(depth, MatrixXd(output_height, output_width));
+
     // Initialize kernels and biases with random values
-    random_device rd;
-    mt19937 gen(rd());
-    normal_distribution<double> d(0, 1);
-    
+    std::normal_distribution<double> dist(0.0, 1.0);
     for (int i = 0; i < depth; ++i) {
         for (int j = 0; j < input_depth; ++j) {
-            kernels[i][j] = MatrixXd(kernel_size, kernel_size);
             for (int k = 0; k < kernel_size; ++k) {
                 for (int l = 0; l < kernel_size; ++l) {
-                    kernels[i][j](k, l) = d(gen);
+                    // kernels[i][j](k, l) = dist(gen);
+                    kernels[i][j](k, l) = 2.0;
                 }
             }
         }
-        
-        biases[i] = MatrixXd(output_height, output_width);
         for (int k = 0; k < output_height; ++k) {
             for (int l = 0; l < output_width; ++l) {
-                biases[i](k, l) = d(gen);
+                biases[i](k, l) = dist(gen);
             }
         }
     }
 }
 
-// Helper method to convert vector<vector<vector<double>>> to vector<MatrixXd>
-vector<MatrixXd> Convolutional::convertToEigen(const vector<vector<vector<double>>>& input) {
-    vector<MatrixXd> result(input.size());
-    for (size_t i = 0; i < input.size(); ++i) {
-        result[i] = MatrixXd(input[i].size(), input[i][0].size());
-        for (size_t j = 0; j < input[i].size(); ++j) {
-            for (size_t k = 0; k < input[i][j].size(); ++k) {
-                result[i](j, k) = input[i][j][k];
-            }
-        }
-    }
-    return result;
-}
+std::vector<Eigen::MatrixXd> Convolutional::forward(const std::vector<Eigen::MatrixXd>& input) {
+    // Store input for backward pass
+    this->input = input;
 
-// Helper method to convert vector<MatrixXd> back to vector<vector<vector<double>>>
-vector<vector<vector<double>>> Convolutional::convertFromEigen(const vector<MatrixXd>& input) {
-    vector<vector<vector<double>>> result(input.size());
-    for (size_t i = 0; i < input.size(); ++i) {
-        result[i].resize(input[i].rows());
-        for (int j = 0; j < input[i].rows(); ++j) {
-            result[i][j].resize(input[i].cols());
-            for (int k = 0; k < input[i].cols(); ++k) {
-                result[i][j][k] = input[i](j, k);
-            }
-        }
-    }
-    return result;
-}
+    // Initialize output vector
+    std::vector<Eigen::MatrixXd> output(depth, MatrixXd::Zero(output_height, output_width));
 
-// Forward pass using Eigen operations
-vector<vector<vector<double>>> Convolutional::forward(const vector<vector<vector<double>>>& input) {
-    // Convert input to Eigen format
-    vector<MatrixXd> eigen_input = convertToEigen(input);
-    vector<MatrixXd> eigen_output(depth);
-    
-    // Initialize output matrices with biases
-    for (int i = 0; i < depth; ++i) {
-        eigen_output[i] = biases[i];
-    }
-    
-    // Perform convolution
     for (int i = 0; i < depth; ++i) {
         for (int j = 0; j < input_depth; ++j) {
-            // Perform convolution for each kernel and input channel
             for (int k = 0; k < output_height; ++k) {
                 for (int l = 0; l < output_width; ++l) {
                     // Extract patch from input
-                    MatrixXd patch = eigen_input[j].block(k, l, kernel_size, kernel_size);
+                    MatrixXd patch = input[j].block(k, l, kernel_size, kernel_size);
                     // Element-wise multiplication and sum (dot product)
-                    eigen_output[i](k, l) += (patch.array() * kernels[i][j].array()).sum();
+                    output[i](k, l) += (patch.array() * kernels[i][j].array()).sum();
                 }
             }
         }
+        output[i] += biases[i]; // Add biases
     }
-    
-    // Convert back to the original format
-    return convertFromEigen(eigen_output);
+
+    // Store output for backward pass
+    this->output = output;
+    return output;
 }
 
-// Backward pass using Eigen operations
-vector<vector<vector<double>>> Convolutional::backward(const vector<vector<vector<double>>>& output_gradient,
-                                        const vector<vector<vector<double>>>& input,
-                                        double learning_rate) {
-    // Convert to Eigen format
-    vector<MatrixXd> eigen_output_grad = convertToEigen(output_gradient);
-    vector<MatrixXd> eigen_input = convertToEigen(input);
-    
+std::vector<Eigen::MatrixXd> Convolutional::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
     // Initialize gradients
-    vector<vector<MatrixXd>> kernels_gradient(depth, vector<MatrixXd>(input_depth));
-    vector<MatrixXd> input_gradient(input_depth);
-    
+    std::vector<std::vector<Eigen::MatrixXd>> kernels_gradient(depth, std::vector<Eigen::MatrixXd>(input_depth, MatrixXd::Zero(kernel_size, kernel_size)));
+    std::vector<Eigen::MatrixXd> input_gradient(input_depth, MatrixXd::Zero(input_height, input_width));
+
     for (int i = 0; i < depth; ++i) {
         for (int j = 0; j < input_depth; ++j) {
-            kernels_gradient[i][j] = MatrixXd::Zero(kernel_size, kernel_size);
-        }
-    }
-    
-    for (int j = 0; j < input_depth; ++j) {
-        input_gradient[j] = MatrixXd::Zero(input_height, input_width);
-    }
-    
-    // Compute kernels gradient
-    for (int i = 0; i < depth; ++i) {
-        for (int j = 0; j < input_depth; ++j) {
-            for (int m = 0; m < kernel_size; ++m) {
-                for (int n = 0; n < kernel_size; ++n) {
+            for (int k = 0; k < kernel_size; ++k) {
+                for (int l = 0; l < kernel_size; ++l) {
                     double grad = 0.0;
-                    for (int k = 0; k < output_height; ++k) {
-                        for (int l = 0; l < output_width; ++l) {
-                            grad += eigen_input[j](k + m, l + n) * eigen_output_grad[i](k, l);
+                    for (int m = 0; m < output_height; ++m) {
+                        for (int n = 0; n < output_width; ++n) {
+                            // For each output position, multiply the corresponding input patch
+                            // with the output gradient at that position
+                            grad += input[j](m + k, n + l) * output_gradient[i](m, n);
                         }
                     }
-                    kernels_gradient[i][j](m, n) = grad;
+                    kernels_gradient[i][j](k, l) = grad;
                 }
             }
         }
     }
-    
-    // Compute input gradient
+
     for (int j = 0; j < input_depth; ++j) {
-        for (int p = 0; p < input_height; ++p) {
-            for (int q = 0; q < input_width; ++q) {
-                double grad = 0.0;
-                for (int i = 0; i < depth; ++i) {
-                    for (int m = 0; m < kernel_size; ++m) {
-                        for (int n = 0; n < kernel_size; ++n) {
-                            int out_row = p - m;
-                            int out_col = q - n;
-                            if (out_row >= 0 && out_row < output_height &&
-                                out_col >= 0 && out_col < output_width) {
-                                grad += kernels[i][j](m, n) * eigen_output_grad[i](out_row, out_col);
+            for (int p = 0; p < input_height; ++p) {
+                for (int q = 0; q < input_width; ++q) {
+                    double grad = 0.0;
+                    for (int i = 0; i < depth; ++i) {
+                        for (int m = 0; m < kernel_size; ++m) {
+                            for (int n = 0; n < kernel_size; ++n) {
+                                int out_row = p - m;
+                                int out_col = q - n;
+                                if (out_row >= 0 && out_row < output_height &&
+                                    out_col >= 0 && out_col < output_width) {
+                                    grad += kernels[i][j](m, n) * output_gradient[i](out_row, out_col);
+                                }
                             }
                         }
                     }
+                    input_gradient[j](p, q) = grad;
                 }
-                input_gradient[j](p, q) = grad;
             }
         }
-    }
-    
+
     // Update kernels and biases
     for (int i = 0; i < depth; ++i) {
         for (int j = 0; j < input_depth; ++j) {
             kernels[i][j] -= learning_rate * kernels_gradient[i][j];
         }
-        biases[i] -= learning_rate * eigen_output_grad[i];
+        biases[i] -= learning_rate * output_gradient[i];
     }
-    
-    return convertFromEigen(input_gradient);
+
+    // cout << "\n--- Kernel Gradients ---\n";
+    // for (int i = 0; i < depth; ++i) {
+    //     for (int j = 0; j < input_depth; ++j) {
+    //         cout << "Kernel Gradient " << i + 1 << " for input channel " << j + 1 << ":\n" 
+    //              << kernels_gradient[i][j] << "\n\n";
+    //     }
+    // }
+
+    return input_gradient;
 }
 
 // int main() {
 //     // Define input shape, kernel size, and depth (number of output channels)
-//     vector<int> input_shape = {2, 5, 5}; 
+//     vector<int> input_shape = {2, 5, 5}; // 2 channels, 5x5 input
 //     int kernel_size = 2;
 //     int depth = 2;
-    
+
 //     // Create convolutional layer instance
 //     Convolutional conv(input_shape, kernel_size, depth);
-    
-//     // Create a sample input filled with ones
-//     vector<vector<vector<double>>> input(2, vector<vector<double>>(5, vector<double>(5, 1.0)));
-    
-//     // Print input image channels
-//     cout << "Input Image Channels:" << endl;
-//     for (int i = 0; i < input.size(); ++i) {
-//         cout << "Channel " << i + 1 << ":\n";
-//         for (const auto& row : input[i]) {
-//             for (double val : row) {
-//                 cout << val << " ";
-//             }
-//             cout << endl;
-//         }
-//         cout << endl;
-//     }
-    
+
 //     // Print initial kernels
-//     cout << "Initial Kernels:" << endl;
-//     for (int i = 0; i < conv.kernels.size(); ++i) {
-//         cout << "Kernel " << i + 1 << ":\n";
-//         for (int j = 0; j < conv.kernels[i].size(); ++j) {
-//             cout << "Channel " << j + 1 << ":\n";
-//             cout << conv.kernels[i][j] << endl;
+//     cout << "Initial Kernels:\n";
+//     for (int i = 0; i < depth; ++i) {
+//         for (int j = 0; j < input_shape[0]; ++j) {
+//             cout << "Kernel " << i + 1 << " for input channel " << j + 1 << ":\n" 
+//                  << conv.kernels[i][j] << "\n\n";
 //         }
-//         cout << endl;
 //     }
-    
+
 //     // Print initial biases
-//     cout << "Initial Biases:" << endl;
-//     for (int i = 0; i < conv.biases.size(); ++i) {
-//         cout << "Bias " << i + 1 << ":\n";
-//         cout << conv.biases[i] << endl;
+//     cout << "Initial Biases:\n";
+//     for (int i = 0; i < depth; ++i) {
+//         cout << "Bias " << i + 1 << ":\n" << conv.biases[i] << "\n\n";
 //     }
-    
+
+//     // Create a sample input as a vector of matrices
+//     std::vector<Eigen::MatrixXd> input(input_shape[0]);
+//     for (int i = 0; i < input_shape[0]; ++i) {
+//         input[i] = Eigen::MatrixXd::Constant(input_shape[1], input_shape[2], 1.0);
+//     }
+
+//     // Print input channels
+//     cout << "Input Channels:\n";
+//     for (int i = 0; i < input.size(); ++i) {
+//         cout << "Channel " << i + 1 << ":\n" << input[i] << endl;
+//     }
+
 //     // Perform forward pass
-//     vector<vector<vector<double>>> conv_output = conv.forward(input);
+//     std::vector<Eigen::MatrixXd> conv_output = conv.forward(input);
     
-//     cout << "\nOutput of Convolutional Forward Pass:" << endl;
+//     cout << "\nOutput of Convolutional Forward Pass:\n";
 //     for (int i = 0; i < conv_output.size(); ++i) {
-//         cout << "Output Channel " << i + 1 << ":\n";
-//         for (const auto& row : conv_output[i]) {
-//             for (double val : row) {
-//                 cout << val << " ";
-//             }
-//             cout << endl;
-//         }
-//         cout << endl;
+//         cout << "Output Channel " << i + 1 << ":\n" << conv_output[i] << endl;
 //     }
-    
-//     // Create a dummy output gradient (same shape as conv_output) filled with ones for testing backward pass
-//     vector<vector<vector<double>>> output_gradient(depth, vector<vector<double>>(conv.output_height, vector<double>(conv.output_width, 1.0)));
-    
-//     double learning_rate = 0.01;
-    
+
+//     int output_height = input_shape[1] - kernel_size + 1;
+//     int output_width = input_shape[2] - kernel_size + 1;
+//     // Create a dummy output gradient for testing backward pass
+//     std::vector<Eigen::MatrixXd> output_gradient(depth);
+//     for (int i = 0; i < depth; ++i) {
+//         output_gradient[i] = Eigen::MatrixXd::Constant(output_height, output_width, 1.0);
+//     }
+
+//     // Print output gradient
+//     cout << "\nOutput Gradient:\n";
+//     for (int i = 0; i < depth; ++i) {
+//         cout << "Gradient for output channel " << i + 1 << ":\n" << output_gradient[i] << "\n\n";
+//     }
+
 //     // Perform backward pass and capture the input gradient
-//     vector<vector<vector<double>>> input_grad = conv.backward(output_gradient, input, learning_rate);
+//     std::vector<Eigen::MatrixXd> input_grad = conv.backward(output_gradient, 0.01);
     
 //     cout << "\n--- Input Gradients ---\n";
 //     for (int i = 0; i < input_grad.size(); ++i) {
-//         cout << "Input Gradient Channel " << i + 1 << ":\n";
-//         for (const auto& row : input_grad[i]) {
-//             for (double val : row) {
-//                 cout << val << " ";
-//             }
-//             cout << endl;
-//         }
-//         cout << endl;
+//         cout << "Gradient Channel " << i + 1 << ":\n" << input_grad[i] << endl;
 //     }
-    
+
+//     // Print bias gradients (which are the same as output gradients)
+//     cout << "\n--- Bias Gradients ---\n";
+//     for (int i = 0; i < depth; ++i) {
+//         cout << "Bias Gradient " << i + 1 << ":\n" << output_gradient[i] << "\n\n";
+//     }
+
 //     return 0;
 // }

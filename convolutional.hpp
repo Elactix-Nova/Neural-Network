@@ -1,33 +1,37 @@
 #pragma once
-#include <iostream>
+#include "layer.hpp"
 #include <vector>
 #include <random>
-#include <limits>
 #include <Eigen/Dense>
 
-class Convolutional {
+class Convolutional : public Layer {
 public:
     // Constructor
-    Convolutional(std::vector<int> input_shape, int kernel_size, int depth);
+    Convolutional(const std::vector<int>& input_shape, int kernel_size, int depth);
 
     // Forward and backward pass
-    std::vector<std::vector<std::vector<double>>> forward(const std::vector<std::vector<std::vector<double>>>& input);
-    std::vector<std::vector<std::vector<double>>> backward(
-        const std::vector<std::vector<std::vector<double>>>& output_gradient,
-        const std::vector<std::vector<std::vector<double>>>& input,
-        double learning_rate);
+    std::vector<Eigen::MatrixXd> forward(const std::vector<Eigen::MatrixXd>& input) override;
+    std::vector<Eigen::MatrixXd> backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) override;
 
-    // Public member variables
-    int depth, input_depth, input_height, input_width;
+public: 
+    // Layer parameters
+    int depth;
+    int input_depth;
+    int input_height;
+    int input_width;
     int kernel_size;
-    int output_height, output_width;
-    
+    int output_height;
+    int output_width;
+
     // Kernels and biases
     std::vector<std::vector<Eigen::MatrixXd>> kernels; // [depth][input_depth][kernel_size x kernel_size]
     std::vector<Eigen::MatrixXd> biases; // [depth][output_height x output_width]
 
-private:
-    // Helper methods for data conversion
-    std::vector<Eigen::MatrixXd> convertToEigen(const std::vector<std::vector<std::vector<double>>>& input);
-    std::vector<std::vector<std::vector<double>>> convertFromEigen(const std::vector<Eigen::MatrixXd>& input);
-}; 
+    // Random number generation
+    std::random_device rd;
+    std::mt19937 gen;
+
+    // Helper methods for convolution operations
+    Eigen::MatrixXd correlate2d(const Eigen::MatrixXd& input, const Eigen::MatrixXd& kernel);
+    Eigen::MatrixXd convolve2d(const Eigen::MatrixXd& input, const Eigen::MatrixXd& kernel);
+};

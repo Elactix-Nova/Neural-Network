@@ -1,43 +1,63 @@
 #include "reshape.hpp"
-#include <numeric>
+#include <Eigen/Dense>
+#include <vector>
+#include <stdexcept>
 
-Reshape::Reshape(const std::vector<Eigen::Index>& new_shape) : new_shape(new_shape) {}
-
-Eigen::MatrixXd Reshape::forward(const Eigen::MatrixXd& input) {
-    this->input = input;
-    
-    // Store the old shape for backward pass
-    old_shape = {input.rows(), input.cols()};
-    
-    // Calculate the total number of elements
-    Eigen::Index total_elements = input.size();
-    
-    // Verify that the new shape has the same number of elements
-    Eigen::Index new_total = std::accumulate(new_shape.begin(), new_shape.end(), 
-                                           static_cast<Eigen::Index>(1), std::multiplies<Eigen::Index>());
-    if (total_elements != new_total) {
-        throw std::runtime_error("Reshape: Total number of elements must remain the same");
+Reshape::Reshape(const std::vector<int>& input_shape, const std::vector<int>& output_shape)
+    : input_shape(input_shape), output_shape(output_shape) {
+    if (total_size(input_shape) != total_size(output_shape)) {
+        throw std::invalid_argument("Total elements in input and output shapes must be the same.");
     }
-    
-    // Create a reshaped matrix
-    Eigen::MatrixXd reshaped;
-    if (new_shape.size() == 2) {
-        // For 2D reshape, create a new matrix with the specified dimensions
-        reshaped = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
-            input.data(), new_shape[0], new_shape[1]);
-    } else {
-        // For higher dimensions, we'll flatten to 2D
-        Eigen::Index rows = new_shape[0];
-        Eigen::Index cols = total_elements / rows;
-        reshaped = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
-            input.data(), rows, cols);
-    }
-    
-    return reshaped;
 }
 
-Eigen::MatrixXd Reshape::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    // Reshape back to the original shape
-    return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
-        output_gradient.data(), old_shape[0], old_shape[1]);
+int Reshape::total_size(const std::vector<int>& shape) {
+    return shape[0] * shape[1] * shape[2];
+}
+
+std::vector<Eigen::MatrixXd> Reshape::forward(const std::vector<Eigen::MatrixXd>& input) {
+    this->input = input;
+
+    // Flatten input matrices in row-major order
+    Eigen::VectorXd flattened(total_size(input_shape));
+    int idx = 0;
+    for (const auto& mat : input) {
+        for (int i = 0; i < mat.rows(); ++i)
+            for (int j = 0; j < mat.cols(); ++j)
+                flattened(idx++) = mat(i, j);
+    }
+
+    // Reshape flattened vector to output shape in row-major order
+    std::vector<Eigen::MatrixXd> output(output_shape[0]);
+    idx = 0;
+    for (int ch = 0; ch < output_shape[0]; ++ch) {
+        output[ch] = Eigen::MatrixXd(output_shape[1], output_shape[2]);
+        for (int i = 0; i < output_shape[1]; ++i)
+            for (int j = 0; j < output_shape[2]; ++j)
+                output[ch](i, j) = flattened(idx++);
+    }
+
+    return output;
+}
+
+std::vector<Eigen::MatrixXd> Reshape::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
+    // Flatten output gradients in row-major order
+    Eigen::VectorXd flattened(total_size(output_shape));
+    int idx = 0;
+    for (const auto& mat : output_gradient) {
+        for (int i = 0; i < mat.rows(); ++i)
+            for (int j = 0; j < mat.cols(); ++j)
+                flattened(idx++) = mat(i, j);
+    }
+
+    // Reshape flattened vector back to input shape in row-major order
+    std::vector<Eigen::MatrixXd> input_gradient(input_shape[0]);
+    idx = 0;
+    for (int ch = 0; ch < input_shape[0]; ++ch) {
+        input_gradient[ch] = Eigen::MatrixXd(input_shape[1], input_shape[2]);
+        for (int i = 0; i < input_shape[1]; ++i)
+            for (int j = 0; j < input_shape[2]; ++j)
+                input_gradient[ch](i, j) = flattened(idx++);
+    }
+
+    return input_gradient;
 }

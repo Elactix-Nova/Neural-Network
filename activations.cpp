@@ -1,42 +1,60 @@
 #include "activations.hpp"
 
 // Tanh implementation
-Eigen::MatrixXd Tanh::forward(const Eigen::MatrixXd& input) {
+std::vector<Eigen::MatrixXd> Tanh::forward(const std::vector<Eigen::MatrixXd>& input) {
     this->input = input;
-    return input.array().tanh();
+    std::vector<Eigen::MatrixXd> output(1);
+    output[0] = input[0].array().tanh();
+    return output;
 }
 
-Eigen::MatrixXd Tanh::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    return output_gradient.array() * (1 - input.array().tanh().square());
+std::vector<Eigen::MatrixXd> Tanh::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
+    std::vector<Eigen::MatrixXd> result(1);
+    result[0] = output_gradient[0].array() * (1 - input[0].array().tanh().square());
+    return result;
 }
 
 // Sigmoid implementation
-Eigen::MatrixXd Sigmoid::forward(const Eigen::MatrixXd& input) {
+std::vector<Eigen::MatrixXd> Sigmoid::forward(const std::vector<Eigen::MatrixXd>& input) {
     this->input = input;
-    return 1.0 / (1.0 + (-input).array().exp());
+    std::vector<Eigen::MatrixXd> output(1);
+    output[0] = 1.0 / (1.0 + (-input[0]).array().exp());
+    return output;
 }
 
-Eigen::MatrixXd Sigmoid::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    Eigen::MatrixXd sigmoid = 1.0 / (1.0 + (-input).array().exp());
-    return output_gradient.array() * sigmoid.array() * (1 - sigmoid.array());
-} 
+std::vector<Eigen::MatrixXd> Sigmoid::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
+    std::vector<Eigen::MatrixXd> result(1);
+    Eigen::MatrixXd sigmoid = 1.0 / (1.0 + (-input[0]).array().exp());
+    result[0] = output_gradient[0].array() * sigmoid.array() * (1 - sigmoid.array());
+    return result;
+}
 
-Eigen::MatrixXd ReLU::forward(const Eigen::MatrixXd& input) {
+// ReLU implementation
+std::vector<Eigen::MatrixXd> ReLU::forward(const std::vector<Eigen::MatrixXd>& input) {
     this->input = input;
-    return input.array().max(0);
+    std::vector<Eigen::MatrixXd> output(1);
+    output[0] = input[0].array().max(0);
+    return output;
 }
 
-Eigen::MatrixXd ReLU::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    return output_gradient.array() * (input.array() >= 0).cast<double>();
+std::vector<Eigen::MatrixXd> ReLU::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
+    std::vector<Eigen::MatrixXd> result(1);
+    result[0] = output_gradient[0].array() * (input[0].array() >= 0).cast<double>();
+    return result;
 }
 
-Eigen::MatrixXd Softmax::forward(const Eigen::MatrixXd& input) {
+// Softmax implementation
+std::vector<Eigen::MatrixXd> Softmax::forward(const std::vector<Eigen::MatrixXd>& input) {
     this->input = input;
-    return input.array().exp() / input.array().exp().sum();
+    std::vector<Eigen::MatrixXd> output(1);
+    output[0] = input[0].array().exp() / input[0].array().exp().sum();
+    return output;
 }
 
-Eigen::MatrixXd Softmax::backward(const Eigen::MatrixXd& output_gradient, double learning_rate) {
-    return output_gradient.array() * (input.array().exp() / input.array().exp().sum());
+std::vector<Eigen::MatrixXd> Softmax::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
+    std::vector<Eigen::MatrixXd> result(1);
+    result[0] = output_gradient[0].array() * (input[0].array().exp() / input[0].array().exp().sum());
+    return result;
 }
 
 

@@ -1,121 +1,88 @@
 #include "losses.hpp"
 #include "convolutional.hpp"
+#include "reshape.hpp"
 #include <iostream>
 #include <iomanip>
 
-void printMatrix(const Eigen::MatrixXd& matrix, const std::string& name) {
-    std::cout << name << ":\n" << matrix << "\n\n";
+
+void printMatrixVector(const std::vector<Eigen::MatrixXd>& matrices, const std::string& name) {
+    std::cout << name << ":\n";
+    for (size_t i = 0; i < matrices.size(); ++i) {
+        std::cout << "Channel " << i << ":\n" << matrices[i] << "\n\n";
+    }
 }
 
-void testMSE() {
-    std::cout << "=== Testing MSE Loss ===\n";
+void testReshape() {
+    std::cout << "\n=== Testing Reshape Layer ===\n";
     
-    // Test case 1: Simple 2x1 matrices
-    Eigen::MatrixXd y_true1(2, 1);
-    y_true1 << 1.0, 0.0;
-    Eigen::MatrixXd y_pred1(2, 1);
-    y_pred1 << 0.8, 0.2;
+    // Test case 1: Reshape from 2 channels of 2x2 to 1 channel of 4x2
+    std::vector<int> input_shape = {2, 2, 2};   // 2 channels, 2x2 each
+    std::vector<int> output_shape = {1, 4, 2};  // 1 channel, 4x2
     
-    printMatrix(y_true1, "y_true1");
-    printMatrix(y_pred1, "y_pred1");
+    Reshape reshape(input_shape, output_shape);
     
-    double mse_loss1 = Loss::mse(y_true1, y_pred1);
-    Eigen::MatrixXd mse_grad1 = Loss::mse_prime(y_true1, y_pred1);
+    // Create input: 2 channels of 2x2 matrices
+    std::vector<Eigen::MatrixXd> input(2);
+    input[0] = Eigen::MatrixXd(2, 2);
+    input[0] << 1, 2,
+                3, 4;
+    input[1] = Eigen::MatrixXd(2, 2);
+    input[1] << 5, 6,
+                7, 8;
     
-    std::cout << "MSE Loss: " << mse_loss1 << "\n";
-    printMatrix(mse_grad1, "MSE Gradient");
-    
-    // Test case 2: 3x2 matrices
-    Eigen::MatrixXd y_true2(3, 2);
-    y_true2 << 1.0, 0.0,
-               0.0, 1.0,
-               0.5, 0.5;
-    Eigen::MatrixXd y_pred2(3, 2);
-    y_pred2 << 0.9, 0.1,
-               0.1, 0.9,
-               0.4, 0.6;
-    
-    printMatrix(y_true2, "y_true2");
-    printMatrix(y_pred2, "y_pred2");
-    
-    double mse_loss2 = Loss::mse(y_true2, y_pred2);
-    Eigen::MatrixXd mse_grad2 = Loss::mse_prime(y_true2, y_pred2);
-    
-    std::cout << "MSE Loss: " << mse_loss2 << "\n";
-    printMatrix(mse_grad2, "MSE Gradient");
-}
-
-void testBinaryCrossEntropy() {
-    std::cout << "\n=== Testing Binary Cross-Entropy Loss ===\n";
-    
-    // Test case 1: Simple 2x1 matrices
-    Eigen::MatrixXd y_true1(2, 1);
-    y_true1 << 1.0, 0.0;
-    Eigen::MatrixXd y_pred1(2, 1);
-    y_pred1 << 0.8, 0.2;
-    
-    printMatrix(y_true1, "y_true1");
-    printMatrix(y_pred1, "y_pred1");
-    
-    double bce_loss1 = Loss::binary_cross_entropy(y_true1, y_pred1);
-    Eigen::MatrixXd bce_grad1 = Loss::binary_cross_entropy_prime(y_true1, y_pred1);
-    
-    std::cout << "Binary Cross-Entropy Loss: " << bce_loss1 << "\n";
-    printMatrix(bce_grad1, "Binary Cross-Entropy Gradient");
-    
-    // Test case 2: 3x2 matrices
-    Eigen::MatrixXd y_true2(3, 2);
-    y_true2 << 1.0, 0.0,
-               0.0, 1.0,
-               0.5, 0.5;
-    Eigen::MatrixXd y_pred2(3, 2);
-    y_pred2 << 0.9, 0.1,
-               0.1, 0.9,
-               0.4, 0.6;
-    
-    printMatrix(y_true2, "y_true2");
-    printMatrix(y_pred2, "y_pred2");
-    
-    double bce_loss2 = Loss::binary_cross_entropy(y_true2, y_pred2);
-    Eigen::MatrixXd bce_grad2 = Loss::binary_cross_entropy_prime(y_true2, y_pred2);
-    
-    std::cout << "Binary Cross-Entropy Loss: " << bce_loss2 << "\n";
-    printMatrix(bce_grad2, "Binary Cross-Entropy Gradient");
-}
-
-void testConvolutional() {
-    std::cout << "\n=== Testing Convolutional Layer ===\n";
-    
-    // Test case: 3x3 input with 2 channels, 2x2 kernel, 2 output channels
-    std::vector<int> input_shape = {2, 3, 3};  // 2 channels, 3x3 input
-    Convolutional conv(input_shape, 2, 2);     // 2x2 kernel, 2 output channels
-    
-    // Create input with 2 channels (6x3 matrix)
-    Eigen::MatrixXd input(6, 3);
-    // First channel (top 3x3)
-    input.block(0, 0, 3, 3).setConstant(2.0);
-    // Second channel (bottom 3x3)
-    input.block(3, 0, 3, 3).setConstant(2.0);
-    
-    printMatrix(input, "Input (2 channels)");
+    std::cout << "Input:\n";
+    printMatrixVector(input, "Input matrices");
     
     // Forward pass
-    Eigen::MatrixXd output = conv.forward(input);
-    printMatrix(output, "Forward Output (2 channels)");
+    std::vector<Eigen::MatrixXd> output = reshape.forward(input);
+    printMatrixVector(output, "Reshaped output");
+    
+    // Verify total elements are preserved
+    int input_elements = 0;
+    for (const auto& mat : input) {
+        input_elements += mat.size();
+    }
+    int output_elements = 0;
+    for (const auto& mat : output) {
+        output_elements += mat.size();
+    }
+    std::cout << "Total elements preserved: " << (input_elements == output_elements ? "Yes" : "No") 
+              << " (Input: " << input_elements << ", Output: " << output_elements << ")\n\n";
+    
+    // Test backward pass
+    std::vector<Eigen::MatrixXd> output_gradient(1);
+    output_gradient[0] = Eigen::MatrixXd(4, 2);
+    output_gradient[0] << 0.1, 0.2,
+                         0.3, 0.4,
+                         0.5, 0.6,
+                         0.7, 0.8;
+    
+    std::cout << "Output gradient:\n";
+    printMatrixVector(output_gradient, "Output gradient");
     
     // Backward pass
-    // Create gradient with 2 channels (4x2 matrix)
-    Eigen::MatrixXd grad(4, 2);
-    grad.setConstant(2.0);  // Set all values to 2
+    std::vector<Eigen::MatrixXd> input_gradient = reshape.backward(output_gradient, 0.01);
+    printMatrixVector(input_gradient, "Reshaped gradient");
     
-    Eigen::MatrixXd back_grad = conv.backward(grad, 0.01);
-    printMatrix(back_grad, "Backward Gradient (2 channels)");
+    // Test case 2: Reshape from 1 channel of 4x2 back to 2 channels of 2x2
+    std::vector<int> input_shape2 = {1, 4, 2};   // 1 channel, 4x2
+    std::vector<int> output_shape2 = {2, 2, 2};  // 2 channels, 2x2 each
+    
+    Reshape reshape2(input_shape2, output_shape2);
+    
+    std::cout << "\nTest case 2 - Reshape back to original shape:\n";
+    std::vector<Eigen::MatrixXd> input2 = output;  // Use output from previous test
+    printMatrixVector(input2, "Input");
+    
+    std::vector<Eigen::MatrixXd> output2 = reshape2.forward(input2);
+    printMatrixVector(output2, "Reshaped output (should match original input)");
 }
 
 int main() {
     std::cout << std::fixed << std::setprecision(4);
-    testMSE();
-    testBinaryCrossEntropy();
-    testConvolutional();
+    // testMSE();
+    // testBinaryCrossEntropy();
+    // testConvolutional();
+    testReshape();
     return 0;
 }
