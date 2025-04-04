@@ -1,4 +1,5 @@
 #include "pooling.hpp"
+#include <iostream>
 
 // MaxPooling implementation
 MaxPooling::MaxPooling(int kernel_size, int stride)
@@ -78,6 +79,7 @@ std::vector<Eigen::MatrixXd> AveragePooling::forward(const std::vector<Eigen::Ma
         }
     }
 
+    // std::cout << "Channels " << output.size() << " Height " << output[0].rows() << " Width " << output[0].cols() << std::endl;
     return output;
 }
 
@@ -95,5 +97,6 @@ std::vector<Eigen::MatrixXd> AveragePooling::backward(const std::vector<Eigen::M
         }
     }
 
+    // std::cout << "Channels " << input_gradient.size() << " Height " << input_gradient[0].rows() << " Width " << input_gradient[0].cols() << std::endl;
     return input_gradient;
 }

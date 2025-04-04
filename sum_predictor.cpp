@@ -23,9 +23,9 @@ generate_data(int num_samples) {
     
     for (int i = 0; i < num_samples; ++i) {
         // Generate random 2x2 binary matrix
-        Eigen::MatrixXd input(3, 3);
-        for (int j = 0; j < 3; ++j) {
-            for (int k = 0; k < 3; ++k) {
+        Eigen::MatrixXd input(8, 8);
+        for (int j = 0; j < 8; ++j) {
+            for (int k = 0; k < 8; ++k) {
                 input(j, k) = dis(gen);
             }
         }
@@ -70,13 +70,15 @@ int main() {
     
     // Create network layers
     std::vector<std::shared_ptr<Layer>> layers = {
-        std::make_shared<Convolutional>(std::vector<int>{1, 3, 3}, 2, 4),
+        std::make_shared<Convolutional>(std::vector<int>{1, 8, 8}, 2, 4, 2, 1),
         // std::make_shared<ReLU>(),
-        std::make_shared<AveragePooling>(1, 1),  // Input: 1x2x2, kernel: 2x2, output channels: 4
+        // std::make_shared<AveragePooling>(2, 2),  // Input: 1x2x2, kernel: 2x2, output channels: 4
         // std::make_shared<Reshape>(std::vector<int>{4,2,2}, std::vector<int>{1,16,1}),  // Reshape to 4x1
         // std::make_shared<Dense>(16, 1),  // Dense layer to output single value
-        std::make_shared<Reshape>(std::vector<int>{4,2,2}, std::vector<int>{1,16,1}),  // Reshape to 4x1
-        std::make_shared<Dense>(16, 1),  // Dense layer to output single value
+        std::make_shared<Reshape>(std::vector<int>{4,5,5}, std::vector<int>{1,100,1}),  // Reshape to 4x1
+        std::make_shared<Dense>(100, 25),  // Dense layer to output single value
+        std::make_shared<Sigmoid>(),
+        std::make_shared<Dense>(25, 1),
         std::make_shared<ReLU>()
     };
 

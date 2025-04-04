@@ -7,6 +7,7 @@ std::vector<Eigen::MatrixXd> Network::predict(const std::vector<Eigen::MatrixXd>
     std::vector<Eigen::MatrixXd> output = input;
     for (const auto& layer : layers) {
         output = layer->forward(output);
+        // std::cout << "Working" << std::endl << std::endl;
     }
     return output;
 }
@@ -32,6 +33,7 @@ void Network::train(const std::vector<std::vector<Eigen::MatrixXd>>& x_train,
             std::vector<Eigen::MatrixXd> grad = loss_prime(y_train[i], output);
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
                 grad = (*it)->backward(grad, learning_rate);
+                // std::cout << "Working" << std::endl << std::endl;
             }
         }
         
