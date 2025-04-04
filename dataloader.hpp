@@ -9,8 +9,12 @@
 
 class DataLoader {
 public:
-    // Constructor
-    DataLoader(const std::string& data_path, int batch_size, bool shuffle = true);
+    // Constructor with direct matrix input
+    DataLoader(const std::vector<Eigen::MatrixXd>& input_data, 
+               const std::vector<int>& labels,
+               int batch_size,
+               int num_classes,
+               bool shuffle = true);
     
     // Get next batch of data
     std::pair<std::vector<std::vector<Eigen::MatrixXd>>, std::vector<std::vector<Eigen::MatrixXd>>> get_next_batch();
@@ -25,14 +29,14 @@ public:
     int get_num_batches() const;
 
 private:
-    std::string data_path;
+    std::vector<std::pair<std::vector<Eigen::MatrixXd>, std::vector<Eigen::MatrixXd>>> data;
     int batch_size;
     bool shuffle;
-    std::vector<std::pair<std::vector<Eigen::MatrixXd>, std::vector<Eigen::MatrixXd>>> data;
     int current_batch;
     int num_batches;
+    int num_classes;
     
     // Helper functions
-    void load_data();
     void shuffle_data();
+    std::vector<Eigen::MatrixXd> one_hot_encode(int label);
 };

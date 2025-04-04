@@ -5,50 +5,38 @@
 #include <random>
 #include <algorithm>
 
-DataLoader::DataLoader(const std::string& data_path, int batch_size, bool shuffle)
-    : data_path(data_path), batch_size(batch_size), shuffle(shuffle), current_batch(0) {
-    load_data();
+DataLoader::DataLoader(const std::vector<Eigen::MatrixXd>& input_data, 
+                       const std::vector<int>& labels,
+                       int batch_size,
+                       int num_classes,
+                       bool shuffle)
+    : batch_size(batch_size), shuffle(shuffle), current_batch(0), num_classes(num_classes) {
+    
+    // Check if input data and labels have the same size
+    if (input_data.size() != labels.size()) {
+        throw std::runtime_error("Input data and labels must have the same size");
+    }
+    
+    // Store the data
+    for (size_t i = 0; i < input_data.size(); ++i) {
+        std::vector<Eigen::MatrixXd> input;
+        input.push_back(input_data[i]);
+        data.emplace_back(input, one_hot_encode(labels[i]));
+    }
+    
     if (shuffle) {
         shuffle_data();
     }
+    
     num_batches = (data.size() + batch_size - 1) / batch_size;
 }
 
-void DataLoader::load_data() {
-    std::ifstream file(data_path);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open file: " + data_path);
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string value;
-        std::vector<double> values;
-        
-        // Read comma-separated values
-        while (std::getline(ss, value, ',')) {
-            values.push_back(std::stod(value));
-        }
-
-        // Assuming first value is label, rest is input data
-        if (values.size() > 1) {
-            std::vector<Eigen::MatrixXd> input;
-            std::vector<Eigen::MatrixXd> label;
-            
-            // Create input matrix (assuming square image)
-            int size = static_cast<int>(std::sqrt(values.size() - 1));
-            Eigen::MatrixXd input_matrix = Eigen::Map<Eigen::MatrixXd>(values.data() + 1, size, size);
-            input.push_back(input_matrix);
-            
-            // Create one-hot encoded label
-            Eigen::MatrixXd label_matrix = Eigen::MatrixXd::Zero(10, 1);
-            label_matrix(static_cast<int>(values[0]), 0) = 1.0;
-            label.push_back(label_matrix);
-            
-            data.emplace_back(input, label);
-        }
-    }
+std::vector<Eigen::MatrixXd> DataLoader::one_hot_encode(int label) {
+    std::vector<Eigen::MatrixXd> encoded;
+    Eigen::MatrixXd label_matrix = Eigen::MatrixXd::Zero(num_classes, 1);
+    label_matrix(label, 0) = 1.0;
+    encoded.push_back(label_matrix);
+    return encoded;
 }
 
 void DataLoader::shuffle_data() {
