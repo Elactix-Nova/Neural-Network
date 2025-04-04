@@ -38,8 +38,17 @@ std::vector<Eigen::MatrixXd> ReLU::forward(const std::vector<Eigen::MatrixXd>& i
 }
 
 std::vector<Eigen::MatrixXd> ReLU::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
-    std::vector<Eigen::MatrixXd> result(1);
-    result[0] = output_gradient[0].array() * (input[0].array() >= 0).cast<double>();
+    std::vector<Eigen::MatrixXd> result(output_gradient.size());
+
+    for (size_t i = 0; i < output_gradient.size(); ++i) {
+        result[i] = Eigen::MatrixXd::Zero(input[i].rows(), input[i].cols());
+        for (int r = 0; r < input[i].rows(); ++r) {
+            for (int c = 0; c < input[i].cols(); ++c) {
+                result[i](r, c) = input[i](r, c) > 0 ? output_gradient[i](r, c) : 0.0;
+            }
+        }
+    }
+
     return result;
 }
 

@@ -69,7 +69,8 @@ int main() {
     
     // Create network layers
     std::vector<std::shared_ptr<Layer>> layers = {
-        std::make_shared<Convolutional>(std::vector<int>{1, 2, 2}, 2, 4),  // Input: 1x2x2, kernel: 2x2, output channels: 4
+        std::make_shared<Convolutional>(std::vector<int>{1, 2, 2}, 2, 4),
+        // std::make_shared<Tanh>(),  // Input: 1x2x2, kernel: 2x2, output channels: 4
         std::make_shared<Reshape>(std::vector<int>{4,1,1}, std::vector<int>{1,4,1}),  // Reshape to 4x1
         std::make_shared<Dense>(4, 1),  // Dense layer to output single value
         std::make_shared<ReLU>()
