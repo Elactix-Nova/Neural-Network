@@ -1,5 +1,6 @@
 CXX = g++
-CFLAGS = -I/usr/include/eigen-3.4.0 -g
+CFLAGS = -I /opt/homebrew/opt/eigen/include/eigen3 -g
+EIGENFLAG = -I /opt/homebrew/opt/eigen/include/eigen3
 
 OBJ = sum_predictor.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
 
@@ -30,5 +31,13 @@ network.o: network.cpp network.hpp
 reshape.o: reshape.cpp reshape.hpp
 	$(CXX) $(CFLAGS) -c reshape.cpp
 
+image_loader.o: image_loader.cpp
+	$(CXX) $(CFLAGS) -c image_loader.cpp
+
 clean:
 	rm -f *.o sum_predictor 
+
+test_img: image_loader.o
+	$(CXX) $(CFLAGS) -c test_img_loader.cpp
+	$(CXX) $(CFLAGS) -o test_img test_img_loader.o image_loader.o
+	./test_img

@@ -1,5 +1,7 @@
 {
     "files.associations": {
+        "COMMIT_EDITMSG": "bat",
+        "*.txt": "markdown",
         "algorithm": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -57,6 +59,16 @@
         "xmemory": "cpp",
         "xstring": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "dense": "cpp",
+        "string": "cpp",
+        "__node_handle": "cpp",
+        "__split_buffer": "cpp",
+        "array": "cpp",
+        "string_view": "cpp",
+        "deque": "cpp",
+        "map": "cpp",
+        "queue": "cpp",
+        "set": "cpp"
     }
 }
