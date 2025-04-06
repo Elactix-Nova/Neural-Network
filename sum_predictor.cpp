@@ -70,16 +70,18 @@ int main() {
     
     // Create network layers
     std::vector<std::shared_ptr<Layer>> layers = {
-        std::make_shared<Convolutional>(std::vector<int>{1, 8, 8}, 2, 4, 2, 1),
+        std::make_shared<Convolutional>(std::vector<int>{1, 8, 8}, 2, 4, 2, 0),
         // std::make_shared<ReLU>(),
-        // std::make_shared<AveragePooling>(2, 2),  // Input: 1x2x2, kernel: 2x2, output channels: 4
+        // std::make_shared<MaxPooling>(2, 2),  // Input: 1x2x2, kernel: 2x2, output channels: 4
         // std::make_shared<Reshape>(std::vector<int>{4,2,2}, std::vector<int>{1,16,1}),  // Reshape to 4x1
         // std::make_shared<Dense>(16, 1),  // Dense layer to output single value
-        std::make_shared<Reshape>(std::vector<int>{4,5,5}, std::vector<int>{1,100,1}),  // Reshape to 4x1
-        std::make_shared<Dense>(100, 25),  // Dense layer to output single value
-        std::make_shared<Sigmoid>(),
-        std::make_shared<Dense>(25, 1),
-        std::make_shared<ReLU>()
+        std::make_shared<Reshape>(std::vector<int>{4,4,4}, std::vector<int>{1,64,1}),  // Reshape to 4x1
+        // std::make_shared<Dense>(100, 50),  // Dense layer to output single value
+        // std::make_shared<Sigmoid>(),
+        // std::make_shared<Dense>(50, 25),
+        // std::make_shared<Sigmoid>(),
+        std::make_shared<Dense>(64, 1),
+        // std::make_shared<ReLU>()
     };
 
     // Create network
