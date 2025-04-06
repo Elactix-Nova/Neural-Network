@@ -4,15 +4,23 @@
 Dense::Dense(int input_size, int output_size) 
     : gen(rd()) {
     // Initialize weights with random values
-    std::normal_distribution<double> dist(0.0, 1.0);
     weights = Eigen::MatrixXd::Zero(output_size, input_size);
     bias = Eigen::MatrixXd::Zero(output_size, 1);
     
-    for(int i = 0; i < output_size; i++) {
-        for(int j = 0; j < input_size; j++) {
-            weights(i, j) = dist(gen);
+    // std::normal_distribution<double> dist(0.0, 1.0);
+    // for(int i = 0; i < output_size; i++) {
+    //     for(int j = 0; j < input_size; j++) {
+    //         weights(i, j) = dist(gen);
+    //     }
+    //     bias(i, 0) = dist(gen);
+    // }
+
+    double stddev = std::sqrt(2.0 / input_size);
+    std::normal_distribution<double> he_dist(0.0, stddev);
+    for (int i = 0; i < output_size; i++) {
+        for (int j = 0; j < input_size; j++) {
+            weights(i, j) = he_dist(gen);
         }
-        bias(i, 0) = dist(gen);
     }
 }
 
