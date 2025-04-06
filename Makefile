@@ -42,6 +42,10 @@ test_img: image_loader.o
 	$(CXX) $(CXXFLAGS) -o test_img test_img_loader.o image_loader.o
 	./test_img
 
+test_loader: test_dataloader.cpp dataloader.cpp image_loader.cpp
+	$(CXX) $(CXXFLAGS) test_dataloader.cpp dataloader.cpp image_loader.cpp -o test_loader
+	./test_loader
+
 # Default rule: if you run `make <something>`, it tries to build `<something>.cpp`
 %: %.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
