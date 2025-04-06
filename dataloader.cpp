@@ -27,9 +27,6 @@ DataLoader::DataLoader(const ImageFolder& image_folder,
 
     num_batches = (data.size() + batch_size - 1) / batch_size;
 }
-
-// TODO: Change class to be compatible with ImageFolder class
-
 DataLoader::DataLoader(const std::vector<Eigen::MatrixXd>& input_data, 
 					   const std::vector<int>& labels,
 					   int batch_size,
