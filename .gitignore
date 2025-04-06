@@ -25,7 +25,7 @@
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-# Makefile # Want to keep this, despite issues
+# Makefile # Want to keep this, despite portability issues
 build/
 build-*/
 
