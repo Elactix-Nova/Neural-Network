@@ -27,7 +27,7 @@ typedef struct ImageStruct
 	int height;
 	int width;
 	string file_path;
-	std::shared_ptr<Eigen::MatrixXd> actual_image;
+	std::shared_ptr<std::vector<Eigen::MatrixXd>> actual_image; 
 	string label;
 } ImageStruct;
 
@@ -38,16 +38,25 @@ class ImageFolder
 		// Only relevant method of class
 		ImageFolder(string folder_root);
 		unordered_map<string, int> get_label_counts();
-		Eigen::MatrixXd raw_img_to_matrix(unsigned char* img, int channels, int width, int height);
+		std::vector<Eigen::MatrixXd> raw_img_to_matrix(unsigned char* img, int channels, int width, int height);
 		~ImageFolder(); // Destructor to avoid memory leaks
 		string root_folder_path;
 		vector<string> labels;
 		int num_classes;
-		vector<vector<std::shared_ptr<Eigen::MatrixXd>>> images; // shared ptr makes our life way easier
+		
+		// How images are stored:
+		// 4 dimensions: 1 - which label, 2 - which image in label,
+		// 3(shared ptr) - which channel in image, 
+		// 4 - actual matrix containing pixel values for that image
+		vector<vector<std::shared_ptr<std::vector<Eigen::MatrixXd>>>> images; // shared ptr makes our life way easier
+		
+		// Store image metadata by image
+		// Not separated by channels obviously, so dimensions only are 1. Label, 2. Image
 		vector<vector<ImageStruct>> images_data;
 		unordered_map<string, int> label_counts;
 	};
 
+// Forget these two for now, not using these except for testing
 typedef struct final_matrix
 {
 	int channels;

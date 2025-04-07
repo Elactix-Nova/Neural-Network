@@ -7,7 +7,7 @@
 #include <vector>
 #include <filesystem>
 #include <Eigen/Dense>
-// using namespace std;
+using namespace std;
 namespace fs = std::filesystem;
 
 ImageFolder::~ImageFolder()
@@ -22,21 +22,24 @@ ImageFolder::~ImageFolder()
 	// }
 }
 
-Eigen::MatrixXd ImageFolder::raw_img_to_matrix(unsigned char* raw_img, int channels, int width, int height)
+using ImageChannels = std::vector<Eigen::MatrixXd>;
+using ImagePtr = std::shared_ptr<ImageChannels>;
+
+vector<Eigen::MatrixXd> ImageFolder::raw_img_to_matrix(unsigned char* raw_img, int channels, int width, int height)
 {
-	Eigen::MatrixXd final_image(channels, height * width);
+	
+	vector<Eigen::MatrixXd> final_image(channels, Eigen::MatrixXd(height, width));
 	int col;
 	int channel;
 	int pixel_index;
-	for (int row = 0; row < height; row++)
+	for (channel = 0; channel < channels; channel++)
 	{
-		for (col = 0; col < width; col++)
+		for (int row = 0; row < height; row++)
 		{
-			pixel_index = (row * width + col) * channels;
-			
-			for (channel = 0; channel < channels; channel++)
+			for (col = 0; col < width; col++)
 			{
-				final_image(channel, row*width + col) = raw_img[pixel_index + channel] / 255.0;
+				pixel_index = (row * width + col) * channels;
+				final_image[channel](row,col) = raw_img[pixel_index + channel] / 255.0;
 			}
 		}
 	}
@@ -53,7 +56,7 @@ ImageFolder::ImageFolder(string folder_root)
 	// Temp. variables for convenience
 	string abs_path;
 	string current_label;
-	string ext;
+	// string ext;
 	int channels, width, height; //temp variables
 	
 	// Traverse top level directory ('./<ds>/train')
@@ -71,12 +74,19 @@ ImageFolder::ImageFolder(string folder_root)
 			// Retrieve current directory name, assuming directory name is label name, like "rose" or "1"
 			current_label = dir_or_file.path().filename().string();
 			cout << "Current label(adding to labels vector) is:" << current_label << endl;
-			labels.push_back(current_label); // index to label mapping
+			
+			// Process new label
+			num_classes+=1;
+			labels.push_back(current_label); // provides index to label mapping
 			label_counts[current_label] = 0;
 			
 			// Add empty nested vector for new labels
-			images.push_back({}); 
-			images_data.push_back({});
+			// images.push_back({}); 
+			// images_data.push_back({});
+			
+			// Simpler, less wierd 
+			images.emplace_back();
+			images_data.emplace_back();
 			
 			for (const auto& img_file: fs::directory_iterator(dir_or_file.path()))
 			{
@@ -90,10 +100,15 @@ ImageFolder::ImageFolder(string folder_root)
 					// Read raw image from file path
 					unsigned char* curr_img_raw = stbi_load(img_file.path().string().data(), &width, &height, &channels, 0);
 					
-					// Convert image to Eigen Matrix, which is 2D so we have to store metadata separately
-					std::shared_ptr<Eigen::MatrixXd> img_ptr = std::make_shared<Eigen::MatrixXd>(
-						raw_img_to_matrix(curr_img_raw, channels, width, height)
-					);
+					if (!curr_img_raw)
+					{
+						cerr << "Failed to load image: " << img_file.path() << endl;
+						continue; // Skip this image and move on
+					}
+					
+					// Convert to Eigen Matrix
+					auto raw_vec = raw_img_to_matrix(curr_img_raw, channels, width, height);
+					ImagePtr img_ptr = std::make_shared<ImageChannels>(std::move(raw_vec));
 					
 					// Add image to last added nested vector, which corresponds to current label
 					images.back().push_back(img_ptr);
@@ -115,13 +130,12 @@ ImageFolder::ImageFolder(string folder_root)
 					stbi_image_free(curr_img_raw);
 				}
 			}
-			num_classes+=1;
-			
 		}
 	}
 }
 
 
+// Ignore, older function once used for testing
 Final_Matrix read_image(string img_file_path, bool is_grayscale)
 {
 	int width, height, channels;

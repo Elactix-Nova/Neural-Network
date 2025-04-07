@@ -7,47 +7,46 @@
 using namespace std;
 
 int main() {
-	string dataset_root = "/Users/id19/Programming/Dev/ML CNN Assignment/test_dataset/val";  // adjust to your dataset folder
-	ImageFolder dataset(dataset_root);
+    string dataset_path = "/Users/id19/Programming/Dev/ML CNN Assignment/test_dataset/val";  // or wherever your dataset is
 
-	cout << "Total classes: " << dataset.num_classes << "\n";
+    try {
+        ImageFolder folder(dataset_path);
 
-	// Loop through each class
-	for (size_t class_idx = 0; class_idx < dataset.images.size(); ++class_idx) {
-		string label = dataset.labels[class_idx];
-		cout << "\n--- Class: " << label << " ---\n";
+        cout << "\nLoaded " << folder.labels.size() << " classes." << endl;
 
-		// Loop through each image in this class
-		for (size_t img_idx = 0; img_idx < dataset.images[class_idx].size(); ++img_idx) {
-			cout << "Image " << img_idx << ":\n";
-			std::shared_ptr<Eigen::MatrixXd> image_ptr = dataset.images[class_idx][img_idx];
-			const ImageStruct& meta = dataset.images_data[class_idx][img_idx];
+        for (size_t class_idx = 0; class_idx < folder.labels.size(); ++class_idx) {
+            const string& label = folder.labels[class_idx];
+            cout << "\nClass " << class_idx << ": " << label
+                << " — " << folder.label_counts[label] << " images" << endl;
 
-			int channels = meta.channels;
-			int height = meta.height;
-			int width = meta.width;
-			string label = meta.label;
+			if (!folder.images[class_idx].empty()) {
+				auto img_ptr = folder.images[class_idx][0]; // shared_ptr<vector<Eigen::MatrixXd>>
+				const auto& channels = *img_ptr;
 			
-			cout << "At path: " << meta.file_path << ", " << channels << ", " << height << ", " << width << ", " << label << endl;
-
-			const Eigen::MatrixXd& matrix = *image_ptr;
-
-			// Print pixel values by channel
-			double mean;
-			for (int c = 0; c < channels; ++c) {
-				cout << "Channel " << c << ":\n";
-				for (int y = 0; y < height; ++y) {
-					for (int x = 0; x < width; ++x) {
-						mean += matrix(c, y * width + x);
-						// cout << val << " ";
-					}
-					// cout << "\n";
+				cout << "Image has " << channels.size() << " channels" << endl;
+			
+				double pixel_sum = 0.0;
+				int total_pixels = 0;
+			
+				for (size_t c = 0; c < channels.size(); ++c) {
+					const Eigen::MatrixXd& mat = channels[c];
+					int rows = mat.rows(), cols = mat.cols();
+			
+					pixel_sum += mat.sum();
+					total_pixels += rows * cols;
+			
+					cout << "  Channel " << c << ": " << rows << "x" << cols << endl;
+					cout << "  Sample pixel (0,0): " << mat(0, 0) << endl;
 				}
-				mean = mean / (height*width);
-				cout << "mean for this channel: " << mean << endl;
+			
+				double mean_pixel_value = pixel_sum / total_pixels;
+				cout << "Mean pixel value across all channels: " << mean_pixel_value << endl;
 			}
-		}
-	}
+        }
 
-	return 0;
+    } catch (const exception& e) {
+        cerr << "Error loading dataset: " << e.what() << endl;
+    }
+
+    return 0;
 }
