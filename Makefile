@@ -53,3 +53,12 @@ test_loader: test_dataloader.cpp dataloader.cpp image_loader.cpp
 # Run the code you compiled
 run-%: %
 	./$<
+
+# Something to make testing much easier
+test:
+	@echo "Usage: make test FILES='main.cpp foo.cpp bar.cpp'"
+
+test_run:
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(FILES) -o test_exec
+	./test_exec
+	rm test_exec
