@@ -2,98 +2,55 @@
 #include <iostream>
 #include <iomanip>
 
-// Helper function to print a single matrix
-void printMatrix(const Eigen::MatrixXd& matrix, const std::string& name) {
-	std::cout << name << ":\n" << matrix << "\n";
-}
-
-// Testing function
-void testDataLoader() {
-	// Create sample input data
-	std::vector<Eigen::MatrixXd> input_data;
-	std::vector<int> labels;
-
-	int num_classes = 10;  // Assume 10 possible classes (0-9)
-	int batch_size = 4;    // Batch size per iteration
-
-	// Generate 8 sample 3x3 matrices with labels
-	for (int i = 0; i < 8; ++i) {
-		Eigen::MatrixXd matrix(3, 3);
-		matrix << (i + 1) * 0.1, (i + 2) * 0.1, (i + 3) * 0.1,
-				  (i + 4) * 0.1, (i + 5) * 0.1, (i + 6) * 0.1,
-				  (i + 7) * 0.1, (i + 8) * 0.1, (i + 9) * 0.1;
-		input_data.push_back(matrix);
-		labels.push_back(i % num_classes);  // Assign cyclic labels (0-9)
-	}
-
-	// Create DataLoader instance
-	DataLoader loader(input_data, labels, batch_size, num_classes, true);
-
-	std::cout << "\n==================== DataLoader Testing ====================\n";
-
-	// Iterate through batches
-	while (loader.has_next_batch()) {
-		auto [batch_inputs, batch_labels] = loader.get_next_batch();
-		// std::cout 
-		std::cout << "\nBatch " << loader.get_num_batches() << ":\n";
-		std::cout << "\nBatch " << batch_inputs.size() + 1 << ":\n";
-		std::cout << "\nBatch " << loader.get_num_batches() - batch_inputs.size() + 1 << ":\n";
-
-		// Print each sample in the batch
-		for (size_t j = 0; j < batch_inputs.size(); ++j) {
-			std::cout << "Sample " << j + 1 << ":\n";
-			printMatrix(batch_inputs[j][0], "Input");  // Extract the first matrix in the sample
-			
-			// Print label (stored as std::vector<Eigen::MatrixXd>)
-			for (size_t k = 0; k < batch_labels[j].size(); ++k) {
-				printMatrix(batch_labels[j][k], "One-Hot Label");
-			}
-
-			std::cout << "------------------------\n";
-		}
-	}
-
-	// Test Reset
-	std::cout << "\n==================== Testing Reset Functionality ====================\n";
-	for (int i = 0; i < 10; i++){
-		loader.reset();
-		auto [reset_inputs, reset_labels] = loader.get_next_batch();
-
-		std::cout << "First batch after reset:\n";
-		for (size_t j = 0; j < reset_inputs.size(); ++j) {
-			std::cout << "Sample: " << j << std::endl;
-			printMatrix(reset_inputs[j][0], "Input");
-
-			for (size_t k = 0; k < reset_labels[j].size(); ++k) {
-				printMatrix(reset_labels[j][k], "One-Hot Label");
-			}
-
-			std::cout << "------------------------\n";
-		}
-	}
+// Helper to print a single matrix
+void printMatrix(const Eigen::MatrixXd& m, const std::string& name) {
+    std::cout << name << ":\n" << m << "\n";
 }
 
 void test_loader_two() {
-	ImageFolder dataset("/Users/id19/Programming/Dev/ML CNN Assignment/test_dataset/val");
-	// ImageFolder dataset("../test_dataset/val");
+    // 1) Load your dataset
+    ImageFolder dataset("/Users/id19/Programming/Dev/ML CNN Assignment/test_dataset/val");
+    int batch_size = 16;
+    DataLoader loader(dataset, batch_size, /*shuffle=*/true);
 
-	int batch_size = 4;
-	DataLoader loader(dataset, batch_size, true);
+    std::cout << "\n===== ImageFolder→DataLoader Test =====\n";
+    int batch_idx = 1;
 
-	int batch_num = 1;
-	while (loader.has_next_batch()) {
-		auto [inputs, labels] = loader.get_next_batch();
-		std::cout << "Batch " << batch_num++ << ":\n";
-		for (size_t i = 0; i < inputs.size(); ++i) {
-			std::cout << "  Image " << i << ", shape: "
-					  << inputs[i][0].rows() << "x" << inputs[i][0].cols() << "\n";
-		}
-	}
+    while (loader.has_next_batch()) {
+        auto [inputs, labels] = loader.get_next_batch();
+        std::cout << "\nBatch " << batch_idx++ 
+                  << " (size = " << inputs.size() << ")\n";
+        std::cout << "-------------------------------------\n";
+
+        for (size_t i = 0; i < inputs.size(); ++i) {
+            // --- Decode the label ---
+            // labels[i] is vector<Eigen::MatrixXd>, with a single one-hot matrix at [0]
+            const auto& one_hot = labels[i][0];
+            int label_index;
+            one_hot.col(0).maxCoeff(&label_index);
+            const std::string& label_str = dataset.labels[label_index];
+
+            // --- Compute mean pixel over all channels ---
+            double sum = 0.0;
+            int total_pixels = 0;
+            for (const auto& channel_mat : inputs[i]) {
+                sum += channel_mat.sum();
+                total_pixels += channel_mat.rows() * channel_mat.cols();
+            }
+            double mean_pixel = sum / total_pixels;
+
+            // --- Print a meaningful summary ---
+            std::cout << " Image " << i 
+                      << " | Class = \"" << label_str << "\" (" << label_index << ")"
+                      << " | Mean pixel = " << std::fixed << std::setprecision(4)
+                      << mean_pixel << "\n";
+        }
+    }
 }
 
+
 int main() {
-	// std::cout << std::fixed << std::setprecision(4);
-	// testDataLoader();
-	test_loader_two();
-	return 0;
+    std::cout << std::fixed << std::setprecision(4);
+    test_loader_two();
+    return 0;
 }

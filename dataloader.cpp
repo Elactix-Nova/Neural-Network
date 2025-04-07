@@ -7,25 +7,26 @@
 // #include "image_loader.hpp" 
 
 DataLoader::DataLoader(const ImageFolder& image_folder,
-                       int batch_size,
-                       bool shuffle)
-    : batch_size(batch_size),
-      shuffle(shuffle),
-      current_batch(0),
-      num_classes(image_folder.labels.size())
+					   int batch_size,
+					   bool shuffle)
+	: batch_size(batch_size),
+	  shuffle(shuffle),
+	  current_batch(0),
+	  num_classes(image_folder.labels.size())
 {
-    for (int label = 0; label < static_cast<int>(image_folder.images.size()); ++label) {
-        for (const auto& img_ptr : image_folder.images[label]) {
-            std::vector<Eigen::MatrixXd> input = { *img_ptr };  // Copy contents
-            data.emplace_back(input, one_hot_encode(label));
-        }
-    }
+	for (int label = 0; label < static_cast<int>(image_folder.images.size()); ++label) {
+		for (const auto& img_ptr : image_folder.images[label]) {
+			// Dereference shared_ptr to get actual vector<Eigen::MatrixXd>
+			std::vector<Eigen::MatrixXd> input = *img_ptr ;  
+			data.emplace_back(input, one_hot_encode(label));
+		}
+	}
 
-    if (shuffle) {
-        shuffle_data();
-    }
+	if (shuffle) {
+		shuffle_data();
+	}
 
-    num_batches = (data.size() + batch_size - 1) / batch_size;
+	num_batches = (data.size() + batch_size - 1) / batch_size;
 }
 DataLoader::DataLoader(const std::vector<Eigen::MatrixXd>& input_data, 
 					   const std::vector<int>& labels,
