@@ -131,3 +131,48 @@ std::vector<Eigen::MatrixXd> AveragePooling::backward(const std::vector<Eigen::M
 
     return input_gradient;
 }
+
+// GlobalAvgPooling Implementation
+// ------------------------------------------------------------------------------------
+GlobalAvgPooling::GlobalAvgPooling(int kernel_size, int stride) 
+    : kernel_size(kernel_size), stride(stride) {}
+
+std::vector<Eigen::MatrixXd> GlobalAvgPooling::forward(const std::vector<Eigen::MatrixXd>& input) {
+    // Store input shape for backward pass
+    input_shape = {static_cast<int>(input.size()), // channels
+                  static_cast<int>(input[0].rows()), // height
+                  static_cast<int>(input[0].cols())}; // width
+    
+    // Initialize output with same number of channels but 1x1 size
+    std::vector<Eigen::MatrixXd> output(input.size());
+    
+    for (size_t c = 0; c < input.size(); ++c) {
+        // Calculate mean of entire feature map
+        output[c] = Eigen::MatrixXd::Zero(1, 1); // Init. output element(for one channel/feature map)
+        output[c](0, 0) = input[c].mean();
+    }
+    
+    return output;
+}
+
+std::vector<Eigen::MatrixXd> GlobalAvgPooling::backward(const std::vector<Eigen::MatrixXd>& output_gradient, double learning_rate) {
+    
+    std::vector<Eigen::MatrixXd> input_gradient(input_shape[0]);
+    
+    for (size_t c = 0; c < input_shape[0]; ++c) {
+        // Get the gradient value for this channel
+        double grad = output_gradient[c](0, 0);
+        
+        // Calculate the scaling factor (1/N where N is total number of elements)
+        double scale = grad / (input_shape[1] * input_shape[2]);
+        
+        // Distribute gradient equally to all positions
+        input_gradient[c] = Eigen::MatrixXd::Constant(
+            input_shape[1], 
+            input_shape[2], 
+            scale
+        );
+    }
+    
+    return input_gradient;
+}

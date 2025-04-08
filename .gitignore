@@ -1,5 +1,63 @@
-__pycache__
-.vscode
-*.py
+# Compiled object files
 *.o
+*.obj
+
+# Executables and build artifacts
+*.exe
+*.out
+*.a
+*.so
+*.dll
+*.dylib
+
+# Compiled static & dynamic libraries
+*.lib
+*.dll
+*.dylib
+
+# Debugging and profiling files
+*.gch
+*.gcno
+*.gcda
+*.gcov
+
+# CMake and build system files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+# Makefile # Want to keep this, despite portability issues
+build/
+build-*/
+
+# Backup files
+*~
+*.swp
+*.swo
+*.bak
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.code-workspace
+
+# macOS system files
+.DS_Store
+
+# Git merge files
+*.orig
+
+# Test binaries or throwaway outputs
+test_*
 a.out
+a.exe
+
+# Valgrind/memcheck outputs
+vgcore.*
