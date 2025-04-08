@@ -7,8 +7,12 @@
 class Convolutional : public Layer {
 public:
     // Constructor
-    Convolutional(const std::vector<int>& input_shape, int kernel_size, int depth, 
-                  int stride = 1, int padding = 0);
+    Convolutional(const std::vector<int>& input_shape, 
+                    int kernel_size, 
+                    int depth, 
+                    int stride = 1, 
+                    int padding = 0
+                    );
 
     // Forward and backward pass
     std::vector<Eigen::MatrixXd> forward(const std::vector<Eigen::MatrixXd>& input) override;
@@ -27,7 +31,9 @@ public:
     int output_width;
 
     // Kernels and biases
+    // [number of feature maps/filters][number of channels in image][<access elements of kernel>]
     std::vector<std::vector<Eigen::MatrixXd>> kernels; // [depth][input_depth][kernel_size x kernel_size]
+    // Common across all channels of image, so drop 2nd dimension. Depth - number of output feature maps(or the number of filters that will be learned across the images)
     std::vector<Eigen::MatrixXd> biases; // [depth][output_height x output_width]
 
     // Random number generation
