@@ -1,8 +1,17 @@
 CXX = g++
-CFLAGS = -I /opt/homebrew/opt/eigen/include/eigen3 -g
-EIGENFLAG = -I /opt/homebrew/opt/eigen/include/eigen3
+CFLAGS = -I /usr/include/eigen-3.4.0 -g
 
 OBJ = sum_predictor.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
+OBJ2 = mnist_loader.o dataloader.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
+
+mnist: $(OBJ2)
+	$(CXX) $(CFLAGS) -o mnist $(OBJ2)
+
+mnist_loader.o: mnist_loader.cpp
+	$(CXX) $(CFLAGS) -c mnist_loader.cpp
+
+dataloader.o: dataloader.cpp
+	$(CXX) $(CFLAGS) -c dataloader.cpp
 
 sum_predictor: $(OBJ)
 	$(CXX) $(CFLAGS) -o sum_predictor $(OBJ)
@@ -35,7 +44,7 @@ image_loader.o: image_loader.cpp
 	$(CXX) $(CFLAGS) -c image_loader.cpp
 
 clean:
-	rm -f *.o sum_predictor 
+	rm -f *.o sum_predictor test_img mnist
 
 test_img: image_loader.o
 	$(CXX) $(CFLAGS) -c test_img_loader.cpp

@@ -2,12 +2,20 @@
 #include <cmath>
 
 namespace Loss {
-    double mse(const Eigen::MatrixXd& y_true, const Eigen::MatrixXd& y_pred) {
-        return (y_true - y_pred).array().square().sum() / y_true.rows();
+    double mse(const std::vector<Eigen::MatrixXd>& y_true, const std::vector<Eigen::MatrixXd>& y_pred) {
+        double loss = 0.0;
+        for (size_t i = 0; i < y_true.size(); ++i) {
+            loss += (y_true[i] - y_pred[i]).array().square().sum();
+        }
+        return loss / y_true.size();
     }
 
-    Eigen::MatrixXd mse_prime(const Eigen::MatrixXd& y_true, const Eigen::MatrixXd& y_pred) {
-        return 2.0 * (y_pred - y_true) / y_true.rows();
+    std::vector<Eigen::MatrixXd> mse_prime(const std::vector<Eigen::MatrixXd>& y_true, const std::vector<Eigen::MatrixXd>& y_pred) {
+        std::vector<Eigen::MatrixXd> grad(y_true.size());
+        for (size_t i = 0; i < y_true.size(); ++i) {
+            grad[i] = 2.0 * (y_pred[i] - y_true[i]) / y_true[i].rows();
+        }
+        return grad;
     }
 
     double binary_cross_entropy(const std::vector<Eigen::MatrixXd>& y_true, 
@@ -43,17 +51,23 @@ namespace Loss {
         return grad;
     }
 
-    double cross_entropy_loss(const Eigen::MatrixXd& y_true, const Eigen::MatrixXd& y_pred) {
-        // Add small epsilon to avoid log(0)
+    double cross_entropy_loss(const std::vector<Eigen::MatrixXd>& y_true, const std::vector<Eigen::MatrixXd>& y_pred) {
         const double epsilon = 1e-15;
-        Eigen::MatrixXd clipped_pred = y_pred.array().max(epsilon).min(1 - epsilon);
-        return -(y_true.array() * clipped_pred.array().log()).sum() / y_true.rows();
+        double loss = 0.0;
+        for (size_t i = 0; i < y_true.size(); ++i) {
+            Eigen::MatrixXd clipped_pred = y_pred[i].array().max(epsilon).min(1 - epsilon);
+            loss += -(y_true[i].array() * clipped_pred.array().log()).sum();
+        }
+        return loss / y_true.size();
     }
 
-    Eigen::MatrixXd cross_entropy_loss_prime(const Eigen::MatrixXd& y_true, const Eigen::MatrixXd& y_pred) {
-        // Add small epsilon to avoid division by zero
+    std::vector<Eigen::MatrixXd> cross_entropy_loss_prime(const std::vector<Eigen::MatrixXd>& y_true, const std::vector<Eigen::MatrixXd>& y_pred) {
         const double epsilon = 1e-15;
-        Eigen::MatrixXd clipped_pred = y_pred.array().max(epsilon).min(1 - epsilon);
-        return (clipped_pred - y_true) / y_true.rows();
+        std::vector<Eigen::MatrixXd> grad(y_true.size());
+        for (size_t i = 0; i < y_true.size(); ++i) {
+            Eigen::MatrixXd clipped_pred = y_pred[i].array().max(epsilon).min(1 - epsilon);
+            grad[i] = (clipped_pred - y_true[i]) / y_true[i].rows();
+        }
+        return grad;
     }
-} 
+}

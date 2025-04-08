@@ -47,7 +47,7 @@ void DataLoader::shuffle_data() {
 
 std::pair<std::vector<std::vector<Eigen::MatrixXd>>, std::vector<std::vector<Eigen::MatrixXd>>> 
 DataLoader::get_next_batch() {
-    if (!has_next_batch()) {
+    if (current_batch >= num_batches) {
         throw std::runtime_error("No more batches available");
     }
 
@@ -64,10 +64,6 @@ DataLoader::get_next_batch() {
 
     current_batch++;
     return {batch_inputs, batch_labels};
-}
-
-bool DataLoader::has_next_batch() const {
-    return current_batch < num_batches;
 }
 
 void DataLoader::reset() {
