@@ -4,7 +4,7 @@ CXX = g++
 CXXFLAGS = -I /opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -g -std=c++17
 
 OBJ = sum_predictor.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
-OBJ2 = mnist_final.o dataloader.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
+OBJ2 = mnist_final.o dataloader.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o stb_impl.o
 MED_SOURCES = network.cpp \
        dense.cpp \
        convolutional.cpp \
@@ -24,6 +24,9 @@ MED_TARGET = medical_classifier
 
 med: $(MED_OBJS)
 	$(CXX) $(CXXFLAGS) -o med $(MED_OBJS)
+
+med_run:  med
+	./med > output.txt
 
 mnist: $(OBJ2)
 	$(CXX) $(CXXFLAGS) -o mnist $(OBJ2)
@@ -65,7 +68,7 @@ image_loader.o: image_loader.cpp
 	$(CXX) $(CXXFLAGS) -c image_loader.cpp
 
 clean:
-	rm -f *.o sum_predictor test_img mnist
+	rm -f *.o sum_predictor test_img mnist med
 
 test_img: image_loader.o
 	$(CXX) $(CXXFLAGS) -c test_img_loader.cpp
