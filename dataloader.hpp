@@ -35,6 +35,8 @@ public:
 	bool has_next_batch() const;
 	void reset();
 	int  get_num_batches() const;
+	int batch_size;
+	int num_classes;
 
 private:
 	// data[i].first  = vector<Eigen::MatrixXd>  → channels of image i
@@ -46,11 +48,9 @@ private:
 		>
 	> data;
 
-	int batch_size;
 	bool shuffle;
 	int current_batch;
 	int num_batches;
-	int num_classes;
 
 	void shuffle_data();
 	std::vector<Eigen::MatrixXd> one_hot_encode(int label);
