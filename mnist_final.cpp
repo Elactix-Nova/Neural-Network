@@ -60,7 +60,8 @@ int main() {
     auto train_images = load_mnist_images("train-images.idx3-ubyte", num_train);
     auto train_labels = load_mnist_labels("train-labels.idx1-ubyte", num_train);
 
-    DataLoader train_loader(train_images, train_labels, 100, 10, true);
+    int batch_size = 32;
+    DataLoader train_loader(train_images, train_labels, batch_size, 10, true);
 
     // Define CNN
     std::vector<std::shared_ptr<Layer>> layers = {
@@ -79,7 +80,7 @@ int main() {
     // Train the network
     int epochs = 100;
     double learning_rate = 0.1;
-
+    double loss;
     for (int epoch = 0; epoch < epochs; ++epoch) {
         train_loader.reset();
         double epoch_loss = 0;
@@ -93,12 +94,13 @@ int main() {
 
             for (size_t i = 0; i < batch_x.size(); ++i) {
                 auto prediction = network.predict(batch_x[i]);
-                epoch_loss += Loss::cross_entropy_loss(batch_y[i], prediction);
-                std::cout << "Loss " << epoch_loss << std::endl; 
+                loss = Loss::cross_entropy_loss(batch_y[i], prediction);
+                std::cout << "Loss " << loss << std::endl; 
+                epoch_loss += loss;
             }
         }
 
-        epoch_loss /= train_loader.get_num_batches();
+        epoch_loss /= (train_loader.get_num_batches() * batch_size);
         std::cout << "Epoch " << epoch + 1 << "/" << epochs << " - Loss: " << epoch_loss << std::endl;
     }
 
