@@ -1,17 +1,19 @@
 CXX = g++
-CFLAGS = -I /usr/include/eigen-3.4.0 -g
+# id19path: /opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3/Eigen
+# elactix nova path: /usr/include/eigen-3.4.0
+CXXFLAGS = -I /opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -g -std=c++17
 
 OBJ = sum_predictor.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
-OBJ2 = mnist_loader.o dataloader.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
+OBJ2 = mnist_final.o dataloader.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
 
 mnist: $(OBJ2)
-	$(CXX) $(CFLAGS) -o mnist $(OBJ2)
+	$(CXX) $(CXXFLAGS) -o mnist $(OBJ2)
 
-mnist_loader.o: mnist_loader.cpp
-	$(CXX) $(CFLAGS) -c mnist_loader.cpp
+mnist_final.o: mnist_final.cpp
+	$(CXX) $(CXXFLAGS) -c mnist_final.cpp
 
 dataloader.o: dataloader.cpp
-	$(CXX) $(CFLAGS) -c dataloader.cpp
+	$(CXX) $(CXXFLAGS) -c dataloader.cpp
 
 sum_predictor: $(OBJ)
 	$(CXX) $(CXXFLAGS) -o sum_predictor $(OBJ)
