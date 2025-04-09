@@ -5,6 +5,25 @@ CXXFLAGS = -I /opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -g -std=c++17
 
 OBJ = sum_predictor.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
 OBJ2 = mnist_final.o dataloader.o convolutional.o dense.o losses.o activations.o pooling.o network.o reshape.o
+MED_SOURCES = network.cpp \
+       dense.cpp \
+       convolutional.cpp \
+       reshape.cpp \
+       activations.cpp \
+       pooling.cpp \
+       losses.cpp \
+       dataloader.cpp \
+       medical_classifier.cpp \
+       stb_impl.cpp
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $<
+
+MED_OBJS = $(MED_SOURCES:.cpp=.o)
+MED_TARGET = medical_classifier
+
+med: $(MED_OBJS)
+	$(CXX) $(CXXFLAGS) -o med $(MED_OBJS)
 
 mnist: $(OBJ2)
 	$(CXX) $(CXXFLAGS) -o mnist $(OBJ2)
@@ -53,8 +72,8 @@ test_img: image_loader.o
 	$(CXX) $(CXXFLAGS) -o test_img test_img_loader.o image_loader.o
 	./test_img
 
-test_loader: test_dataloader.cpp dataloader.cpp image_loader.cpp
-	$(CXX) $(CXXFLAGS) test_dataloader.cpp dataloader.cpp image_loader.cpp -o test_loader
+test_loader: test_dataloader.cpp dataloader.cpp
+	$(CXX) $(CXXFLAGS) test_dataloader.cpp dataloader.cpp -o test_loader
 	./test_loader
 
 # Default rule: if you run `make <something>`, it tries to build `<something>.cpp`
