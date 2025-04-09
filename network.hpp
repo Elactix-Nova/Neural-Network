@@ -7,7 +7,7 @@
 
 class Network {
 public:
-    Network(const std::vector<std::shared_ptr<Layer>>& layers);
+    Network(const std::vector<std::shared_ptr<Layer>>& layers, bool debug=false);
     
     std::vector<Eigen::MatrixXd> predict(const std::vector<Eigen::MatrixXd>& input);
     void train(const std::vector<std::vector<Eigen::MatrixXd>>& x_train, 
@@ -17,7 +17,8 @@ public:
                int epochs = 1000,
                double learning_rate = 0.01,
                bool verbose = true);
-
+    bool debug;
+    
 private:
     std::vector<std::shared_ptr<Layer>> layers;
 }; 

@@ -1,7 +1,7 @@
 #include "network.hpp"
 #include <iostream>
 
-Network::Network(const std::vector<std::shared_ptr<Layer>>& layers) : layers(layers) {}
+Network::Network(const std::vector<std::shared_ptr<Layer>>& layers, bool debug=false) : layers(layers), debug(debug) {}
 
 // Function to print layer dimensions for debugging
 void print_layer_dimensions(const std::vector<Eigen::MatrixXd>& data, const std::string& layer_name) {
@@ -14,15 +14,19 @@ void print_layer_dimensions(const std::vector<Eigen::MatrixXd>& data, const std:
 std::vector<Eigen::MatrixXd> Network::predict(const std::vector<Eigen::MatrixXd>& input) {
     std::vector<Eigen::MatrixXd> output = input;
     
-    // Print input dimensions
-    print_layer_dimensions(output, "Network input");
+    if (verbose){
+        // Print input dimensions
+        print_layer_dimensions(output, "Network input");
+    }
     
     for (size_t i = 0; i < layers.size(); ++i) {
         output = layers[i]->forward(output);
         
-        // Print output dimensions after each layer
-        std::string layer_name = "After layer " + std::to_string(i);
-        print_layer_dimensions(output, layer_name);
+        if (verbose){
+            // Print output dimensions after each layer
+            std::string layer_name = "After layer " + std::to_string(i);
+            print_layer_dimensions(output, layer_name);
+        }
     }
     return output;
 }
