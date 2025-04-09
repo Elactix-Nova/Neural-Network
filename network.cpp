@@ -3,11 +3,26 @@
 
 Network::Network(const std::vector<std::shared_ptr<Layer>>& layers) : layers(layers) {}
 
+// Function to print layer dimensions for debugging
+void print_layer_dimensions(const std::vector<Eigen::MatrixXd>& data, const std::string& layer_name) {
+    std::cout << layer_name << " dimensions: " << data.size() << " channels" << std::endl;
+    if (!data.empty()) {
+        std::cout << "First channel dimensions: " << data[0].rows() << "x" << data[0].cols() << std::endl;
+    }
+}
+
 std::vector<Eigen::MatrixXd> Network::predict(const std::vector<Eigen::MatrixXd>& input) {
     std::vector<Eigen::MatrixXd> output = input;
-    for (const auto& layer : layers) {
-        output = layer->forward(output);
-        // std::cout << "Working" << std::endl << std::endl;
+    
+    // Print input dimensions
+    print_layer_dimensions(output, "Network input");
+    
+    for (size_t i = 0; i < layers.size(); ++i) {
+        output = layers[i]->forward(output);
+        
+        // Print output dimensions after each layer
+        std::string layer_name = "After layer " + std::to_string(i);
+        print_layer_dimensions(output, layer_name);
     }
     return output;
 }
@@ -33,7 +48,6 @@ void Network::train(const std::vector<std::vector<Eigen::MatrixXd>>& x_train,
             std::vector<Eigen::MatrixXd> grad = loss_prime(y_train[i], output);
             for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
                 grad = (*it)->backward(grad, learning_rate);
-                // std::cout << "Working" << std::endl << std::endl;
             }
         }
         
